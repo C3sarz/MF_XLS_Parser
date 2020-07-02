@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main_Form));
-            this.InputButton = new System.Windows.Forms.Button();
+            this.OpenFileButton = new System.Windows.Forms.Button();
             this.InfoTextBox = new System.Windows.Forms.TextBox();
             this.DataTextBox = new System.Windows.Forms.TextBox();
             this.button2 = new System.Windows.Forms.Button();
@@ -42,18 +42,20 @@
             this.LoadingImage = new System.Windows.Forms.PictureBox();
             this.RowConfirmButton = new System.Windows.Forms.Button();
             this.RowBox = new System.Windows.Forms.TextBox();
+            this.AppLoadingImage = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.LoadingImage)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.AppLoadingImage)).BeginInit();
             this.SuspendLayout();
             // 
-            // InputButton
+            // OpenFileButton
             // 
-            this.InputButton.Location = new System.Drawing.Point(63, 119);
-            this.InputButton.Name = "InputButton";
-            this.InputButton.Size = new System.Drawing.Size(142, 52);
-            this.InputButton.TabIndex = 0;
-            this.InputButton.Text = "Abrir archivo";
-            this.InputButton.UseVisualStyleBackColor = true;
-            this.InputButton.Click += new System.EventHandler(this.InputButton_Click);
+            this.OpenFileButton.Location = new System.Drawing.Point(63, 119);
+            this.OpenFileButton.Name = "OpenFileButton";
+            this.OpenFileButton.Size = new System.Drawing.Size(142, 52);
+            this.OpenFileButton.TabIndex = 0;
+            this.OpenFileButton.Text = "Abrir archivo";
+            this.OpenFileButton.UseVisualStyleBackColor = true;
+            this.OpenFileButton.Click += new System.EventHandler(this.OpenFileButton_Click);
             // 
             // InfoTextBox
             // 
@@ -168,11 +170,25 @@
             this.RowBox.Size = new System.Drawing.Size(66, 20);
             this.RowBox.TabIndex = 13;
             // 
+            // AppLoadingImage
+            // 
+            this.AppLoadingImage.Image = ((System.Drawing.Image)(resources.GetObject("AppLoadingImage.Image")));
+            this.AppLoadingImage.InitialImage = ((System.Drawing.Image)(resources.GetObject("AppLoadingImage.InitialImage")));
+            this.AppLoadingImage.Location = new System.Drawing.Point(12, 119);
+            this.AppLoadingImage.Name = "AppLoadingImage";
+            this.AppLoadingImage.Size = new System.Drawing.Size(50, 52);
+            this.AppLoadingImage.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.AppLoadingImage.TabIndex = 14;
+            this.AppLoadingImage.TabStop = false;
+            this.AppLoadingImage.UseWaitCursor = true;
+            this.AppLoadingImage.Visible = false;
+            // 
             // Main_Form
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.AppLoadingImage);
             this.Controls.Add(this.RowBox);
             this.Controls.Add(this.RowConfirmButton);
             this.Controls.Add(this.LoadingImage);
@@ -185,10 +201,11 @@
             this.Controls.Add(this.button2);
             this.Controls.Add(this.DataTextBox);
             this.Controls.Add(this.InfoTextBox);
-            this.Controls.Add(this.InputButton);
+            this.Controls.Add(this.OpenFileButton);
             this.Name = "Main_Form";
             this.Text = " ";
             ((System.ComponentModel.ISupportInitialize)(this.LoadingImage)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.AppLoadingImage)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -196,7 +213,7 @@
 
         #endregion
 
-        private System.Windows.Forms.Button InputButton;
+        private System.Windows.Forms.Button OpenFileButton;
         private System.Windows.Forms.TextBox InfoTextBox;
         private System.Windows.Forms.TextBox DataTextBox;
         private System.Windows.Forms.Button button2;
@@ -209,6 +226,7 @@
         private System.Windows.Forms.PictureBox LoadingImage;
         private System.Windows.Forms.Button RowConfirmButton;
         private System.Windows.Forms.TextBox RowBox;
+        private System.Windows.Forms.PictureBox AppLoadingImage;
     }
 }
 

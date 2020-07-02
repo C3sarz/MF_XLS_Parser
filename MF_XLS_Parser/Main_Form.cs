@@ -77,6 +77,7 @@ namespace MF_XLS_Parser
         private bool columnsReady = false;
         private int[] columns;
         private int firstDataRow;
+        private string fileName;
 
         /// <summary>
         /// Form constructor.
@@ -92,7 +93,6 @@ namespace MF_XLS_Parser
             backgroundWorker1.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
             backgroundWorker2.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
             backgroundWorker3.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
-
         }
 
         /// <summary>
@@ -100,20 +100,18 @@ namespace MF_XLS_Parser
         /// </summary>
         /// <param name="sender">The button.</param>
         /// <param name="e">Event.</param>
-        private void InputButton_Click(object sender, EventArgs e)
+        private void OpenFileButton_Click(object sender, EventArgs e)
         {
             //File input.
             OpenFileDialog openDialog = new OpenFileDialog();
             if (openDialog.ShowDialog() == DialogResult.OK)
             {
-                string fileName = openDialog.FileName;
+                OpenFileButton.Enabled = false;
+                fileName = openDialog.FileName;
                 DataTextBox.Text = fileName;
-                excelApp = new Excel.Application();
-                excelApp.Visible = false;
-                currentWorkbook = excelApp.Workbooks.Open(@fileName);
-                currentSheet = (Excel.Worksheet)currentWorkbook.Worksheets.get_Item(1);
-                xlRange = currentSheet.UsedRange;
-                ParsingButton.Enabled = true;
+                AppLoadingImage.Visible = true;
+                columnsReady = false;
+                backgroundWorker1.RunWorkerAsync();
             }
         }
 
@@ -181,6 +179,7 @@ namespace MF_XLS_Parser
                 Marshal.ReleaseComObject(currentWorkbook);
                 excelApp.Quit();
                 Marshal.ReleaseComObject(excelApp);
+                DataTextBox.Clear();
             }
 
             catch (Exception ex)
@@ -232,13 +231,13 @@ namespace MF_XLS_Parser
         }
 
         /// <summary>
-        /// Parses a specified column on the Excel file into a new one.
+        /// Transfers a specified column on the Excel file into a new one, skipping null cells.
         /// </summary>
         /// <param name="startingRow">Row to start parsing.</param>
         /// <param name="parsedColumn">Column to be parsed.</param>
         /// <param name="newSheetPositionX">Starting column cell in which the parsed data is copied.</param>
         /// <param name="newSheetPositionY">Starting row cell in which the parsed data is copied.</param>
-        private void startParsing(int startingRow, int parsedColumn, int newSheetPositionX, int newSheetPositionY)
+        private void startTransfer(int startingRow, int parsedColumn, int newSheetPositionX, int newSheetPositionY)
         {
             try
             {
@@ -274,63 +273,20 @@ namespace MF_XLS_Parser
             }
         }
 
-        private int[] getDataColumns(int firstDataRow)
-        {
-            int processedColumn = 0;
-            int position = 1;
-            int[] dataColumns = new int[5];
-            while (processedColumn < 5)
-            {
-                if((xlRange.Cells[firstDataRow, position]).Value2 != null)
-                {
-                    if (processedColumn == 0 && !Double.TryParse((xlRange.Cells[firstDataRow, position].Value2.ToString()), out double result))
-                    {
-                        throw new Exception("Could not find columns.");
-                    }
-                    dataColumns[processedColumn] = position;
-                    processedColumn++;
-                }
-                position++;
-                if (position >= 100) throw new Exception("Could not find columns.");
-            }
-            this.firstDataRow = firstDataRow;
-            return dataColumns;
-        }
-
-
-
-
         /// <summary>
-        /// Background worker 1 work method.
+        /// Transfers a specified column on the Excel file into a new one, skipping null cells.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        /// <param name="startingRow">Row to start parsing.</param>
+        /// <param name="newSheetPositionX">Starting column cell in which the parsed data is copied.</param>
+        /// <param name="newSheetPositionY">Starting row cell in which the parsed data is copied.</param>
+        private void startFullTransfer(int startingRow, int newSheetPositionX, int newSheetPositionY)
         {
-            int newSheetPositionX = 1;
-            int newSheetPositionY = 3;
-            int parsedColumn = columns[0];
-            //Parse codes
-            startParsing(firstDataRow, parsedColumn, newSheetPositionX, newSheetPositionY);
-        }
-
-        /// <summary>
-        /// Background worker 2 work method.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
-        {
-            int newSheetPositionX = 2;
-            int newSheetPositionY = 3;
-            int namesColumn = columns[2];
-            int startingRow = firstDataRow;
-            int quantityColumn = columns[3];
-
             try
             {
                 int nullCount = 0;
                 int currentPosition = startingRow;
+                int namesColumn = columns[2];
+                int quantityColumn = columns[3];
 
                 // Iteration through cells.
                 while (nullCount < 10)
@@ -367,6 +323,72 @@ namespace MF_XLS_Parser
                 errorMessage = String.Concat(errorMessage, ex.ToString());
                 MessageBox.Show(errorMessage, "Error");
             }
+        
+        }
+
+        private int[] getDataColumns(int firstDataRow)
+        {
+            int processedColumn = 0;
+            int position = 1;
+            int[] dataColumns = new int[5];
+            while (processedColumn < 5)
+            {
+                if((xlRange.Cells[firstDataRow, position]).Value2 != null)
+                {
+                    if (processedColumn == 0 && !Double.TryParse((xlRange.Cells[firstDataRow, position].Value2.ToString()), out double result))
+                    {
+                        throw new Exception("Could not find columns");
+                    }
+                    dataColumns[processedColumn] = position;
+                    processedColumn++;
+                }
+                position++;
+                if (position >= 100) throw new Exception("No se encontraron columnas de datos.");
+            }
+            this.firstDataRow = firstDataRow;
+            return dataColumns;
+        }
+
+
+
+
+        /// <summary>
+        /// Background worker 1 work method.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        {
+            if (columnsReady)
+            {
+                int newSheetPositionX = 1;
+                int newSheetPositionY = 3;
+                int parsedColumn = columns[0];
+                //Transfer codes
+                startTransfer(firstDataRow, parsedColumn, newSheetPositionX, newSheetPositionY);
+            }
+            else
+            {
+
+                    excelApp = new Excel.Application();
+                    excelApp.Visible = false;
+                    currentWorkbook = excelApp.Workbooks.Open(@fileName);
+                    currentSheet = (Excel.Worksheet)currentWorkbook.Worksheets.get_Item(1);
+                    xlRange = currentSheet.UsedRange;
+                
+            }
+        }
+
+        /// <summary>
+        /// Background worker 2 work method.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
+        {
+            int newSheetPositionX = 2;
+            int newSheetPositionY = 3;
+            startFullTransfer(firstDataRow, newSheetPositionX, newSheetPositionY);
         }
 
         /// <summary>
@@ -424,13 +446,23 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void BackgroundWorkers_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            workersCompleted++;
-            if (workersCompleted >= 2)
+            if (columnsReady)
             {
+                workersCompleted++;
+                if (workersCompleted >= 2)
+                {
+                    ParsingButton.Enabled = true;
+                    LoadingImage.Visible = false;
+                    columnsReady = false;
+                    RowBox.BackColor = Color.White;
+                    MessageBox.Show("Proceso completado");
+                }
+            }
+            else
+            {
+                AppLoadingImage.Visible = false;
                 ParsingButton.Enabled = true;
-                LoadingImage.Visible = false;
-                columnsReady = false;
-                MessageBox.Show("Proceso completado");
+                OpenFileButton.Enabled = true;
             }
         }
 
@@ -440,10 +472,12 @@ namespace MF_XLS_Parser
             {
                 columns = getDataColumns(Int32.Parse(RowBox.Text));
                 columnsReady = true;
+                RowBox.BackColor = Color.LightGreen;
             }
             catch(Exception ex)
             {
                 columnsReady = false;
+                RowBox.BackColor = Color.White;
                 MessageBox.Show("Error confirmando fila.");
             }
         }
