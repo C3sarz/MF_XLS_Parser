@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main_Form));
             this.OpenFileButton = new System.Windows.Forms.Button();
             this.InfoTextBox = new System.Windows.Forms.TextBox();
             this.DataTextBox = new System.Windows.Forms.TextBox();
@@ -142,8 +141,8 @@
             // 
             // LoadingImage
             // 
-            this.LoadingImage.Image = ((System.Drawing.Image)(resources.GetObject("LoadingImage.Image")));
-            this.LoadingImage.InitialImage = ((System.Drawing.Image)(resources.GetObject("LoadingImage.InitialImage")));
+            this.LoadingImage.Image = global::MF_XLS_Parser.Properties.Resources.loading;
+            this.LoadingImage.InitialImage = global::MF_XLS_Parser.Properties.Resources.loading;
             this.LoadingImage.Location = new System.Drawing.Point(211, 280);
             this.LoadingImage.Name = "LoadingImage";
             this.LoadingImage.Size = new System.Drawing.Size(50, 52);
@@ -172,8 +171,8 @@
             // 
             // AppLoadingImage
             // 
-            this.AppLoadingImage.Image = ((System.Drawing.Image)(resources.GetObject("AppLoadingImage.Image")));
-            this.AppLoadingImage.InitialImage = ((System.Drawing.Image)(resources.GetObject("AppLoadingImage.InitialImage")));
+            this.AppLoadingImage.Image = global::MF_XLS_Parser.Properties.Resources.loading;
+            this.AppLoadingImage.InitialImage = global::MF_XLS_Parser.Properties.Resources.loading;
             this.AppLoadingImage.Location = new System.Drawing.Point(12, 119);
             this.AppLoadingImage.Name = "AppLoadingImage";
             this.AppLoadingImage.Size = new System.Drawing.Size(50, 52);
