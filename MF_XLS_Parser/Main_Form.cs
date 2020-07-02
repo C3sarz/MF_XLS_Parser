@@ -13,6 +13,7 @@ using System.Reflection;
 using System.IO;
 using System.Security.Authentication;
 using Microsoft.CSharp.RuntimeBinder;
+using Microsoft.Office.Interop.Excel;
 
 namespace MF_XLS_Parser
 {
@@ -64,9 +65,18 @@ namespace MF_XLS_Parser
         private BackgroundWorker backgroundWorker2 = new BackgroundWorker();
 
         /// <summary>
+        /// Third background worker.
+        /// </summary>
+        private BackgroundWorker backgroundWorker3 = new BackgroundWorker();
+
+        /// <summary>
         /// Tracks the amount of completed working threads.
         /// </summary>
         private int workersCompleted;
+
+        private bool columnsReady = false;
+        private int[] columns;
+        private int firstDataRow;
 
         /// <summary>
         /// Form constructor.
@@ -78,8 +88,11 @@ namespace MF_XLS_Parser
             //Worker setup.
             backgroundWorker1.DoWork += BackgroundWorker1_DoWork;
             backgroundWorker2.DoWork += BackgroundWorker2_DoWork;
+            backgroundWorker3.DoWork += BackgroundWorker1_DoWork;
             backgroundWorker1.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
             backgroundWorker2.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
+            backgroundWorker3.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
+
         }
 
         /// <summary>
@@ -195,23 +208,27 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void ParsingButton_Click(object sender, EventArgs e)
         {
-            //Workbook
-            ParsingButton.Enabled = false;
-            LoadingImage.Visible = true;
-            newExcelApp = new Excel.Application();
-            newExcelApp.Visible = true;
-            newWorkBook = (Excel._Workbook)(newExcelApp.Workbooks.Add(Missing.Value));
-            newSheet = (Excel._Worksheet)newWorkBook.ActiveSheet;
-            //Sheet setup
-            newSheet.Cells[1, 1] = "Codigo";
-            newSheet.Cells[1, 2] = "Producto";
-            newSheet.Cells[1, 3] = "Cantidad";
-            newSheet.Cells[1, 4] = "Total";
+            if (columnsReady)
+            {
+                //Workbook
+                ParsingButton.Enabled = false;
+                LoadingImage.Visible = true;
+                newExcelApp = new Excel.Application();
+                newExcelApp.Visible = true;
+                newWorkBook = (Excel._Workbook)(newExcelApp.Workbooks.Add(Missing.Value));
+                newSheet = (Excel._Worksheet)newWorkBook.ActiveSheet;
+                //Sheet setup
+                newSheet.Cells[1, 1] = "Codigo";
+                newSheet.Cells[1, 2] = "Producto";
+                newSheet.Cells[1, 3] = "Cantidad";
+                newSheet.Cells[1, 4] = "Total";
 
-            //Launch worker threads.
-            workersCompleted = 0;
-            backgroundWorker1.RunWorkerAsync();
-            backgroundWorker2.RunWorkerAsync();
+                //Launch worker threads.
+                workersCompleted = 0;
+                backgroundWorker1.RunWorkerAsync();
+                backgroundWorker2.RunWorkerAsync();
+            }
+            else MessageBox.Show("Por favor confimar la primera fila de datos.");
         }
 
         /// <summary>
@@ -257,6 +274,32 @@ namespace MF_XLS_Parser
             }
         }
 
+        private int[] getDataColumns(int firstDataRow)
+        {
+            int processedColumn = 0;
+            int position = 1;
+            int[] dataColumns = new int[5];
+            while (processedColumn < 5)
+            {
+                if((xlRange.Cells[firstDataRow, position]).Value2 != null)
+                {
+                    if (processedColumn == 0 && !Double.TryParse((xlRange.Cells[firstDataRow, position].Value2.ToString()), out double result))
+                    {
+                        throw new Exception("Could not find columns.");
+                    }
+                    dataColumns[processedColumn] = position;
+                    processedColumn++;
+                }
+                position++;
+                if (position >= 100) throw new Exception("Could not find columns.");
+            }
+            this.firstDataRow = firstDataRow;
+            return dataColumns;
+        }
+
+
+
+
         /// <summary>
         /// Background worker 1 work method.
         /// </summary>
@@ -266,9 +309,9 @@ namespace MF_XLS_Parser
         {
             int newSheetPositionX = 1;
             int newSheetPositionY = 3;
-            int parsedColumn = 1;
+            int parsedColumn = columns[0];
             //Parse codes
-            startParsing(9, parsedColumn, newSheetPositionX, newSheetPositionY);             
+            startParsing(firstDataRow, parsedColumn, newSheetPositionX, newSheetPositionY);
         }
 
         /// <summary>
@@ -280,9 +323,9 @@ namespace MF_XLS_Parser
         {
             int newSheetPositionX = 2;
             int newSheetPositionY = 3;
-            int namesColumn = 18;
-            int startingRow = 9;
-            int quantityColumn = 30;
+            int namesColumn = columns[2];
+            int startingRow = firstDataRow;
+            int quantityColumn = columns[3];
 
             try
             {
@@ -303,10 +346,10 @@ namespace MF_XLS_Parser
                         newSheet.Cells[newSheetPositionY, newSheetPositionX] = (xlRange.Cells[currentPosition, namesColumn]).Value2;
 
                         //Quantity copying.
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX+1] = (xlRange.Cells[currentPosition, quantityColumn]).Value2.ToString();
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 1] = (xlRange.Cells[currentPosition, quantityColumn]).Value2.ToString();
 
                         //Total copying.
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = (xlRange.Cells[currentPosition, quantityColumn+2]).Value2.ToString();
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = (xlRange.Cells[currentPosition, quantityColumn + 2]).Value2.ToString();
 
                         newSheetPositionY++;
                     }
@@ -333,7 +376,45 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void BackgroundWorker3_DoWork(object sender, DoWorkEventArgs e)
         {
-            //Empty
+            int newSheetPositionX = 1;
+            int newSheetPositionY = 3;
+            int parsedColumn = 1;
+            int startingRow = 9;
+            int quantityColumn = 30;
+            try
+            {
+                ////Get a range of not null cells;
+                //int nullCount = 0;
+                //int currentPosition = startingRow;
+                //int lastNotNull = startingRow;
+
+                //// Iteration through cells.
+                //while (nullCount < 10)
+                //{
+                //    if (xlRange.Cells[currentPosition, parsedColumn] == null || xlRange.Cells[currentPosition, parsedColumn].Value2 == null)
+                //    {
+                //        nullCount++;
+                //    }
+                //    else
+                //    {
+                //        nullCount = 0;
+                //        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (xlRange.Cells[currentPosition, parsedColumn]).Value2;
+                //        newSheetPositionY++;
+                //    }
+                //    currentPosition++;
+                //}
+            }
+
+            //Error handling
+            catch (Exception ex)
+            {
+                String errorMessage;
+                errorMessage = "Error: ";
+                errorMessage = String.Concat(errorMessage, ex.Message);
+                errorMessage = String.Concat(errorMessage, "\n Full String: ");
+                errorMessage = String.Concat(errorMessage, ex.ToString());
+                MessageBox.Show(errorMessage, "Error");
+            }
         }
 
         /// <summary>
@@ -348,7 +429,22 @@ namespace MF_XLS_Parser
             {
                 ParsingButton.Enabled = true;
                 LoadingImage.Visible = false;
-                MessageBox.Show("Parsing completado");
+                columnsReady = false;
+                MessageBox.Show("Proceso completado");
+            }
+        }
+
+        private void RowConfirmButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                columns = getDataColumns(Int32.Parse(RowBox.Text));
+                columnsReady = true;
+            }
+            catch(Exception ex)
+            {
+                columnsReady = false;
+                MessageBox.Show("Error confirmando fila.");
             }
         }
     }

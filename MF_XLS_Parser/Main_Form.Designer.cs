@@ -40,6 +40,8 @@
             this.WriteButton = new System.Windows.Forms.Button();
             this.ParsingButton = new System.Windows.Forms.Button();
             this.LoadingImage = new System.Windows.Forms.PictureBox();
+            this.RowConfirmButton = new System.Windows.Forms.Button();
+            this.RowBox = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.LoadingImage)).BeginInit();
             this.SuspendLayout();
             // 
@@ -149,11 +151,30 @@
             this.LoadingImage.UseWaitCursor = true;
             this.LoadingImage.Visible = false;
             // 
+            // RowConfirmButton
+            // 
+            this.RowConfirmButton.Location = new System.Drawing.Point(263, 348);
+            this.RowConfirmButton.Name = "RowConfirmButton";
+            this.RowConfirmButton.Size = new System.Drawing.Size(90, 52);
+            this.RowConfirmButton.TabIndex = 12;
+            this.RowConfirmButton.Text = "Confirmar Fila";
+            this.RowConfirmButton.UseVisualStyleBackColor = true;
+            this.RowConfirmButton.Click += new System.EventHandler(this.RowConfirmButton_Click);
+            // 
+            // RowBox
+            // 
+            this.RowBox.Location = new System.Drawing.Point(359, 365);
+            this.RowBox.Name = "RowBox";
+            this.RowBox.Size = new System.Drawing.Size(66, 20);
+            this.RowBox.TabIndex = 13;
+            // 
             // Main_Form
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.RowBox);
+            this.Controls.Add(this.RowConfirmButton);
             this.Controls.Add(this.LoadingImage);
             this.Controls.Add(this.ParsingButton);
             this.Controls.Add(this.WriteButton);
@@ -186,6 +207,8 @@
         private System.Windows.Forms.Button WriteButton;
         private System.Windows.Forms.Button ParsingButton;
         private System.Windows.Forms.PictureBox LoadingImage;
+        private System.Windows.Forms.Button RowConfirmButton;
+        private System.Windows.Forms.TextBox RowBox;
     }
 }
 
