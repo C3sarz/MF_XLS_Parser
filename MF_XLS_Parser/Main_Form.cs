@@ -44,7 +44,7 @@ namespace MF_XLS_Parser
         public Main_Form()
         {
             InitializeComponent();
-            
+
             backgroundWorker1.DoWork += BackgroundWorker1_DoWork;
             backgroundWorker2.DoWork += BackgroundWorker2_DoWork;
             backgroundWorker1.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
@@ -59,7 +59,7 @@ namespace MF_XLS_Parser
         private void Button1_Click(object sender, EventArgs e)
         {
             OpenFileDialog openDialog = new OpenFileDialog();
-            
+
             if (openDialog.ShowDialog() == DialogResult.OK)
             {
                 string fileName = openDialog.FileName;
@@ -155,25 +155,27 @@ namespace MF_XLS_Parser
             newExcelApp.Visible = true;
             newWorkBook = (Excel._Workbook)(newExcelApp.Workbooks.Add(Missing.Value));
             newSheet = (Excel._Worksheet)newWorkBook.ActiveSheet;
-            excelApp.UserControl = false;
 
             backgroundWorker1.RunWorkerAsync();
             backgroundWorker2.RunWorkerAsync();
         }
 
+        /// <summary>
+        /// Background worker 1 work method.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
             try
             {
-                /////////////
                 int nullCount = 0;
                 int currentPosition = 9;
                 int newSheetPositionX = 1;
                 int newSheetPositionY = 1;
 
-
-                nullCount = 0;
-                while (nullCount < 5)
+                // Iteration through cells.
+                while (nullCount < 10)
                 {
                     if (xlRange.Cells[currentPosition, 2] == null || xlRange.Cells[currentPosition, 2].Value2 == null)
                     {
@@ -182,22 +184,11 @@ namespace MF_XLS_Parser
                     else
                     {
                         nullCount = 0;
-                        //if (xlRange.Cells[currentPosition, 2].Value2 is string s)
-                        //{
-                            newSheet.Cells[newSheetPositionY, newSheetPositionX] = (string)(xlRange.Cells[currentPosition, 2] as Excel.Range).Value2;
-                            newSheetPositionY++;
-                        //}
-                        //else if (xlRange.Cells[currentPosition, 2].Value2 is double d)
-                        //{
-                        //    newSheet.Cells[newSheetPositionY, newSheetPositionX] = (xlRange.Cells[currentPosition, 2] as Excel.Range).Value2.ToString();
-                        //}
-
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (string)(xlRange.Cells[currentPosition, 2] as Excel.Range).Value2;
+                        newSheetPositionY++;
                     }
                     currentPosition++;
-                    //if (currentPosition > 21000) break; //debug
                 }
-
-                /////////////                
             }
 
             catch (Exception ex)
@@ -211,19 +202,22 @@ namespace MF_XLS_Parser
             }
         }
 
+        /// <summary>
+        /// Background worker 2 work method.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
         {
             try
             {
-                /////////////
                 int nullCount = 0;
                 int currentPosition = 9;
                 int newSheetPositionX = 3;
                 int newSheetPositionY = 1;
 
-
-                nullCount = 0;
-                while (nullCount < 5)
+                // Iteration through cells.
+                while (nullCount < 10)
                 {
                     if (xlRange.Cells[currentPosition, 19] == null || xlRange.Cells[currentPosition, 19].Value2 == null)
                     {
@@ -232,24 +226,14 @@ namespace MF_XLS_Parser
                     else
                     {
                         nullCount = 0;
-                        //if (xlRange.Cells[currentPosition, 2].Value2 is string s)
-                        //{
                         newSheet.Cells[newSheetPositionY, newSheetPositionX] = (string)(xlRange.Cells[currentPosition, 19] as Excel.Range).Value2;
                         newSheetPositionY++;
-                        //}
-                        //else if (xlRange.Cells[currentPosition, 2].Value2 is double d)
-                        //{
-                        //    newSheet.Cells[newSheetPositionY, newSheetPositionX] = (xlRange.Cells[currentPosition, 2] as Excel.Range).Value2.ToString();
-                        //}
-
                     }
                     currentPosition++;
-                    //if (currentPosition > 21000) break; //debug
                 }
-
-                /////////////                
             }
 
+            //Error handling
             catch (Exception ex)
             {
                 String errorMessage;
@@ -260,6 +244,12 @@ namespace MF_XLS_Parser
                 MessageBox.Show(errorMessage, "Error");
             }
         }
+
+        /// <summary>
+        /// Work completed event handler
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void BackgroundWorkers_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             workersCompleted++;
@@ -267,6 +257,7 @@ namespace MF_XLS_Parser
             {
                 ParsingButton.Enabled = true;
                 LoadingImage.Visible = false;
+                MessageBox.Show("Parsing completado");
             }
         }
     }
