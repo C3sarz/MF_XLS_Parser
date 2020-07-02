@@ -32,19 +32,50 @@ namespace MF_XLS_Parser
         /// Current sheet on the workbook.
         /// </summary>
         private Excel._Worksheet currentSheet;
-        private Excel.Range xlRange;
-        private int workersCompleted = 0;
 
+        /// <summary>
+        /// Range worked on in the excel file.
+        /// </summary>
+        private Excel.Range xlRange;
+
+        /// <summary>
+        /// Instance of the created output Excel app.
+        /// </summary>
         Excel.Application newExcelApp;
+
+        /// <summary>
+        /// New workbook created to copy data into (output).
+        /// </summary>
         Excel._Workbook newWorkBook;
+
+        /// <summary>
+        /// The new sheet created in the output workbook.
+        /// </summary>
         Excel._Worksheet newSheet;
 
-        BackgroundWorker backgroundWorker1 = new BackgroundWorker();
-        BackgroundWorker backgroundWorker2 = new BackgroundWorker();
+        /// <summary>
+        /// First background worker.
+        /// </summary>
+        private BackgroundWorker backgroundWorker1 = new BackgroundWorker();
+
+        /// <summary>
+        /// Second background worker.
+        /// </summary>
+        private BackgroundWorker backgroundWorker2 = new BackgroundWorker();
+
+        /// <summary>
+        /// Tracks the amount of completed working threads.
+        /// </summary>
+        private int workersCompleted;
+
+        /// <summary>
+        /// Form constructor.
+        /// </summary>
         public Main_Form()
         {
             InitializeComponent();
 
+            //Worker setup.
             backgroundWorker1.DoWork += BackgroundWorker1_DoWork;
             backgroundWorker2.DoWork += BackgroundWorker2_DoWork;
             backgroundWorker1.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
@@ -56,10 +87,10 @@ namespace MF_XLS_Parser
         /// </summary>
         /// <param name="sender">The button.</param>
         /// <param name="e">Event.</param>
-        private void Button1_Click(object sender, EventArgs e)
+        private void InputButton_Click(object sender, EventArgs e)
         {
+            //File input.
             OpenFileDialog openDialog = new OpenFileDialog();
-
             if (openDialog.ShowDialog() == DialogResult.OK)
             {
                 string fileName = openDialog.FileName;
@@ -69,6 +100,7 @@ namespace MF_XLS_Parser
                 currentWorkbook = excelApp.Workbooks.Open(@fileName);
                 currentSheet = (Excel.Worksheet)currentWorkbook.Worksheets.get_Item(1);
                 xlRange = currentSheet.UsedRange;
+                ParsingButton.Enabled = true;
             }
         }
 
@@ -77,7 +109,7 @@ namespace MF_XLS_Parser
         /// </summary>
         /// <param name="sender">The button.</param>
         /// <param name="e">Event.</param>
-        private void button2_Click(object sender, EventArgs e)
+        private void ShowCellButton_Click(object sender, EventArgs e)
         {
             int i = Int32.Parse(cellBox1.Text);
             int j = Int32.Parse(cellBox2.Text);
@@ -123,6 +155,7 @@ namespace MF_XLS_Parser
         /// </summary>
         private void Cleanup()
         {
+            ParsingButton.Enabled = false;
             try
             {
                 GC.Collect();
@@ -143,6 +176,11 @@ namespace MF_XLS_Parser
             }
         }
 
+        /// <summary>
+        /// Write Cell button event handler.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void WriteButton_Click(object sender, EventArgs e)
         {
             int i = Int32.Parse(cellBox1.Text);
@@ -157,72 +195,23 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void ParsingButton_Click(object sender, EventArgs e)
         {
+            //Workbook
             ParsingButton.Enabled = false;
             LoadingImage.Visible = true;
             newExcelApp = new Excel.Application();
             newExcelApp.Visible = true;
             newWorkBook = (Excel._Workbook)(newExcelApp.Workbooks.Add(Missing.Value));
             newSheet = (Excel._Worksheet)newWorkBook.ActiveSheet;
+            //Sheet setup
+            newSheet.Cells[1, 1] = "Codigo";
+            newSheet.Cells[1, 2] = "Producto";
+            newSheet.Cells[1, 3] = "Cantidad";
+            newSheet.Cells[1, 4] = "Total";
 
+            //Launch worker threads.
+            workersCompleted = 0;
             backgroundWorker1.RunWorkerAsync();
             backgroundWorker2.RunWorkerAsync();
-        }
-
-        /// <summary>
-        /// Background worker 1 work method.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
-        {
-            try
-            {
-                int nullCount = 0;
-                int currentPosition = 9;
-                int newSheetPositionX = 1;
-                int newSheetPositionY = 1;
-                int parsedColumn = 1;
-
-                // Iteration through cells.
-                while (nullCount < 10)
-                {
-                    if (xlRange.Cells[currentPosition, parsedColumn] == null || xlRange.Cells[currentPosition, parsedColumn].Value2 == null)
-                    {
-                        nullCount++;
-                    }
-                    else
-                    {
-                        nullCount = 0;
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (string)(xlRange.Cells[currentPosition, parsedColumn] as Excel.Range).Value2;
-                        newSheetPositionY++;
-                    }
-                    currentPosition++;
-                }
-            }
-
-            catch (Exception ex)
-            {
-                String errorMessage;
-                errorMessage = "Error: ";
-                errorMessage = String.Concat(errorMessage, ex.Message);
-                errorMessage = String.Concat(errorMessage, "\n Full String: ");
-                errorMessage = String.Concat(errorMessage, ex.ToString());
-                MessageBox.Show(errorMessage, "Error");
-            }
-        }
-
-        /// <summary>
-        /// Background worker 2 work method.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
-        {
-            int newSheetPositionX = 3;
-            int newSheetPositionY = 1;
-            int parsedColumn = 18;
-            //Parse names
-            startParsing(9, newSheetPositionX, newSheetPositionY, parsedColumn);
         }
 
         /// <summary>
@@ -249,11 +238,9 @@ namespace MF_XLS_Parser
                     else
                     {
                         nullCount = 0;
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (string)(xlRange.Cells[currentPosition, parsedColumn] as Excel.Range).Value2;
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (xlRange.Cells[currentPosition, parsedColumn]).Value2;
                         newSheetPositionY++;
                     }
-                    //Current cell output to textbox.
-                    InfoTextBox.Text = currentPosition.ToString();
                     currentPosition++;
                 }
             }
@@ -270,7 +257,74 @@ namespace MF_XLS_Parser
             }
         }
 
+        /// <summary>
+        /// Background worker 1 work method.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        {
+            int newSheetPositionX = 1;
+            int newSheetPositionY = 3;
+            int parsedColumn = 1;
+            //Parse codes
+            startParsing(9, parsedColumn, newSheetPositionX, newSheetPositionY);             
+        }
 
+        /// <summary>
+        /// Background worker 2 work method.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
+        {
+            int newSheetPositionX = 2;
+            int newSheetPositionY = 3;
+            int namesColumn = 18;
+            int startingRow = 9;
+            int quantityColumn = 30;
+
+            try
+            {
+                int nullCount = 0;
+                int currentPosition = startingRow;
+
+                // Iteration through cells.
+                while (nullCount < 10)
+                {
+                    if (xlRange.Cells[currentPosition, namesColumn] == null || xlRange.Cells[currentPosition, namesColumn].Value2 == null)
+                    {
+                        nullCount++;
+                    }
+                    else
+                    {
+                        nullCount = 0;
+                        //Name copying.
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (xlRange.Cells[currentPosition, namesColumn]).Value2;
+
+                        //Quantity copying.
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX+1] = (xlRange.Cells[currentPosition, quantityColumn]).Value2.ToString();
+
+                        //Total copying.
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = (xlRange.Cells[currentPosition, quantityColumn+2]).Value2.ToString();
+
+                        newSheetPositionY++;
+                    }
+                    currentPosition++;
+                }
+            }
+
+            //Error handling
+            catch (Exception ex)
+            {
+                String errorMessage;
+                errorMessage = "Error: ";
+                errorMessage = String.Concat(errorMessage, ex.Message);
+                errorMessage = String.Concat(errorMessage, "\n Full String: ");
+                errorMessage = String.Concat(errorMessage, ex.ToString());
+                MessageBox.Show(errorMessage, "Error");
+            }
+        }
 
         /// <summary>
         /// Background worker 3 work method.
