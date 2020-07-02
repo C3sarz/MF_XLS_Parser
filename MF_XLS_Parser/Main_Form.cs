@@ -33,13 +33,22 @@ namespace MF_XLS_Parser
         /// </summary>
         private Excel._Worksheet currentSheet;
         private Excel.Range xlRange;
+        private int workersCompleted = 0;
+
+        Excel.Application newExcelApp;
+        Excel._Workbook newWorkBook;
+        Excel._Worksheet newSheet;
+
         BackgroundWorker backgroundWorker1 = new BackgroundWorker();
+        BackgroundWorker backgroundWorker2 = new BackgroundWorker();
         public Main_Form()
         {
             InitializeComponent();
             
             backgroundWorker1.DoWork += BackgroundWorker1_DoWork;
-            backgroundWorker1.RunWorkerCompleted += BackgroundWorker1_RunWorkerCompleted;
+            backgroundWorker2.DoWork += BackgroundWorker2_DoWork;
+            backgroundWorker1.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
+            backgroundWorker2.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
         }
 
         /// <summary>
@@ -142,28 +151,20 @@ namespace MF_XLS_Parser
         {
             ParsingButton.Enabled = false;
             LoadingImage.Visible = true;
+            newExcelApp = new Excel.Application();
+            newExcelApp.Visible = true;
+            newWorkBook = (Excel._Workbook)(newExcelApp.Workbooks.Add(Missing.Value));
+            newSheet = (Excel._Worksheet)newWorkBook.ActiveSheet;
+            excelApp.UserControl = false;
 
             backgroundWorker1.RunWorkerAsync();
+            backgroundWorker2.RunWorkerAsync();
         }
 
         private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
-            Excel.Application newExcelApp;
-            Excel._Workbook newWorkBook;
-            Excel._Worksheet newSheet;
-            Excel.Range newExcelRange;
-
-
-
             try
             {
-                newExcelApp = new Excel.Application();
-                newExcelApp.Visible = true;
-                newWorkBook = (Excel._Workbook)(newExcelApp.Workbooks.Add(Missing.Value));
-                newSheet = (Excel._Worksheet)newWorkBook.ActiveSheet;
-
-
-
                 /////////////
                 int nullCount = 0;
                 int currentPosition = 9;
@@ -196,8 +197,7 @@ namespace MF_XLS_Parser
                     //if (currentPosition > 21000) break; //debug
                 }
 
-                /////////////
-                Cleanup();
+                /////////////                
             }
 
             catch (Exception ex)
@@ -210,11 +210,64 @@ namespace MF_XLS_Parser
                 MessageBox.Show(errorMessage, "Error");
             }
         }
-        private void BackgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+
+        private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
         {
-            
-            ParsingButton.Enabled = true;
-            LoadingImage.Visible = false;
+            try
+            {
+                /////////////
+                int nullCount = 0;
+                int currentPosition = 9;
+                int newSheetPositionX = 3;
+                int newSheetPositionY = 1;
+
+
+                nullCount = 0;
+                while (nullCount < 5)
+                {
+                    if (xlRange.Cells[currentPosition, 19] == null || xlRange.Cells[currentPosition, 19].Value2 == null)
+                    {
+                        nullCount++;
+                    }
+                    else
+                    {
+                        nullCount = 0;
+                        //if (xlRange.Cells[currentPosition, 2].Value2 is string s)
+                        //{
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (string)(xlRange.Cells[currentPosition, 19] as Excel.Range).Value2;
+                        newSheetPositionY++;
+                        //}
+                        //else if (xlRange.Cells[currentPosition, 2].Value2 is double d)
+                        //{
+                        //    newSheet.Cells[newSheetPositionY, newSheetPositionX] = (xlRange.Cells[currentPosition, 2] as Excel.Range).Value2.ToString();
+                        //}
+
+                    }
+                    currentPosition++;
+                    //if (currentPosition > 21000) break; //debug
+                }
+
+                /////////////                
+            }
+
+            catch (Exception ex)
+            {
+                String errorMessage;
+                errorMessage = "Error: ";
+                errorMessage = String.Concat(errorMessage, ex.Message);
+                errorMessage = String.Concat(errorMessage, "\n Full String: ");
+                errorMessage = String.Concat(errorMessage, ex.ToString());
+                MessageBox.Show(errorMessage, "Error");
+            }
+        }
+        private void BackgroundWorkers_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            workersCompleted++;
+            if (workersCompleted >= 2)
+            {
+                ParsingButton.Enabled = true;
+                LoadingImage.Visible = false;
+            }
         }
     }
 }
