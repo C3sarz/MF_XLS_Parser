@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main_Form));
             this.Button1 = new System.Windows.Forms.Button();
             this.InfoTextBox = new System.Windows.Forms.TextBox();
             this.DataTextBox = new System.Windows.Forms.TextBox();
@@ -38,6 +39,8 @@
             this.cellBox2 = new System.Windows.Forms.TextBox();
             this.WriteButton = new System.Windows.Forms.Button();
             this.ParsingButton = new System.Windows.Forms.Button();
+            this.LoadingImage = new System.Windows.Forms.PictureBox();
+            ((System.ComponentModel.ISupportInitialize)(this.LoadingImage)).BeginInit();
             this.SuspendLayout();
             // 
             // Button1
@@ -132,11 +135,25 @@
             this.ParsingButton.UseVisualStyleBackColor = true;
             this.ParsingButton.Click += new System.EventHandler(this.ParsingButton_Click);
             // 
+            // LoadingImage
+            // 
+            this.LoadingImage.Image = ((System.Drawing.Image)(resources.GetObject("LoadingImage.Image")));
+            this.LoadingImage.InitialImage = ((System.Drawing.Image)(resources.GetObject("LoadingImage.InitialImage")));
+            this.LoadingImage.Location = new System.Drawing.Point(371, 280);
+            this.LoadingImage.Name = "LoadingImage";
+            this.LoadingImage.Size = new System.Drawing.Size(50, 49);
+            this.LoadingImage.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.LoadingImage.TabIndex = 11;
+            this.LoadingImage.TabStop = false;
+            this.LoadingImage.UseWaitCursor = true;
+            this.LoadingImage.Visible = false;
+            // 
             // Main_Form
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.LoadingImage);
             this.Controls.Add(this.ParsingButton);
             this.Controls.Add(this.WriteButton);
             this.Controls.Add(this.cellBox2);
@@ -149,6 +166,7 @@
             this.Controls.Add(this.Button1);
             this.Name = "Main_Form";
             this.Text = "MF ";
+            ((System.ComponentModel.ISupportInitialize)(this.LoadingImage)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -166,6 +184,7 @@
         private System.Windows.Forms.TextBox cellBox2;
         private System.Windows.Forms.Button WriteButton;
         private System.Windows.Forms.Button ParsingButton;
+        private System.Windows.Forms.PictureBox LoadingImage;
     }
 }
 

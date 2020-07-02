@@ -33,9 +33,13 @@ namespace MF_XLS_Parser
         /// </summary>
         private Excel._Worksheet currentSheet;
         private Excel.Range xlRange;
+        BackgroundWorker backgroundWorker1 = new BackgroundWorker();
         public Main_Form()
         {
             InitializeComponent();
+            
+            backgroundWorker1.DoWork += BackgroundWorker1_DoWork;
+            backgroundWorker1.RunWorkerCompleted += BackgroundWorker1_RunWorkerCompleted;
         }
 
         /// <summary>
@@ -102,6 +106,14 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void CleanupButton_Click(object sender, EventArgs e)
         {
+            Cleanup();
+        }
+
+        /// <summary>
+        /// Gets rid of background threads.
+        /// </summary>
+        private void Cleanup()
+        {
             GC.Collect();
             GC.WaitForPendingFinalizers();
 
@@ -128,6 +140,14 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void ParsingButton_Click(object sender, EventArgs e)
         {
+            ParsingButton.Enabled = false;
+            LoadingImage.Visible = true;
+
+            backgroundWorker1.RunWorkerAsync();
+        }
+
+        private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        {
             Excel.Application newExcelApp;
             Excel._Workbook newWorkBook;
             Excel._Worksheet newSheet;
@@ -150,6 +170,8 @@ namespace MF_XLS_Parser
                 int newSheetPositionX = 1;
                 int newSheetPositionY = 1;
 
+
+                nullCount = 0;
                 while (nullCount < 5)
                 {
                     if (xlRange.Cells[currentPosition, 2] == null || xlRange.Cells[currentPosition, 2].Value2 == null)
@@ -159,25 +181,26 @@ namespace MF_XLS_Parser
                     else
                     {
                         nullCount = 0;
-                        if (xlRange.Cells[currentPosition, 2].Value2 is string s)
-                        {
+                        //if (xlRange.Cells[currentPosition, 2].Value2 is string s)
+                        //{
                             newSheet.Cells[newSheetPositionY, newSheetPositionX] = (string)(xlRange.Cells[currentPosition, 2] as Excel.Range).Value2;
                             newSheetPositionY++;
-                        }
-                        else if (xlRange.Cells[currentPosition, 2].Value2 is double d)
-                        {
-                            newSheet.Cells[newSheetPositionY, newSheetPositionX] = (xlRange.Cells[currentPosition, 2] as Excel.Range).Value2.ToString();
-                        }
+                        //}
+                        //else if (xlRange.Cells[currentPosition, 2].Value2 is double d)
+                        //{
+                        //    newSheet.Cells[newSheetPositionY, newSheetPositionX] = (xlRange.Cells[currentPosition, 2] as Excel.Range).Value2.ToString();
+                        //}
 
                     }
                     currentPosition++;
-                    if (currentPosition > 21000) break; //debug
+                    //if (currentPosition > 21000) break; //debug
                 }
 
                 /////////////
+                Cleanup();
             }
 
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 String errorMessage;
                 errorMessage = "Error: ";
@@ -186,6 +209,12 @@ namespace MF_XLS_Parser
                 errorMessage = String.Concat(errorMessage, ex.ToString());
                 MessageBox.Show(errorMessage, "Error");
             }
+        }
+        private void BackgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            
+            ParsingButton.Enabled = true;
+            LoadingImage.Visible = false;
         }
     }
 }
