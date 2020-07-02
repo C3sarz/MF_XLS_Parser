@@ -52,7 +52,7 @@ namespace MF_XLS_Parser
                 string fileName = openDialog.FileName;
                 DataTextBox.Text = fileName;
                 excelApp = new Excel.Application();
-                excelApp.Visible = true;
+                excelApp.Visible = false;
                 currentWorkbook = excelApp.Workbooks.Open(@fileName);
                 currentSheet = (Excel.Worksheet)currentWorkbook.Worksheets.get_Item(1);
                 xlRange = currentSheet.UsedRange;
@@ -66,39 +66,46 @@ namespace MF_XLS_Parser
         /// <param name="e">Event.</param>
         private void button2_Click(object sender, EventArgs e)
         {
+            int i = Int32.Parse(cellBox1.Text);
+            int j = Int32.Parse(cellBox2.Text);
             try
             {
-                int i = Int32.Parse(cellBox1.Text);
-                int j = Int32.Parse(cellBox2.Text);
                 if (xlRange.Cells[i, j] != null && xlRange.Cells[i, j].Value2 != null)
                 {
-                    DataTextBox.Text = (string)(xlRange.Cells[i, j] as Excel.Range).Value2; ;
+                    DataTextBox.Text = (string)(xlRange.Cells[i, j] as Excel.Range).Value2;
                 }
                 else DataTextBox.Text = "Empty Cell";
             }
 
-            catch (RuntimeBinderException theException)
+            catch (RuntimeBinderException ex)
             {
-                int i = Int32.Parse(cellBox1.Text);
-                int j = Int32.Parse(cellBox2.Text);
                 DataTextBox.Text = ((double)(xlRange.Cells[i, j] as Excel.Range).Value2).ToString();
             }
 
-            catch (Exception theException)
+            catch (Exception ex)
             {
                 String errorMessage;
                 errorMessage = "Error: ";
-                errorMessage = String.Concat(errorMessage, theException.Message);
+                errorMessage = String.Concat(errorMessage, ex.Message);
                 errorMessage = String.Concat(errorMessage, "\n Full String: ");
-                errorMessage = String.Concat(errorMessage, theException.ToString());
+                errorMessage = String.Concat(errorMessage, ex.ToString());
                 MessageBox.Show(errorMessage, "Error");
             }
+            //if (xlRange.Cells[i, j].Value2 == null) InfoTextBox.Text = "null";
+            //else InfoTextBox.Text = (xlRange.Cells[i, j] as Excel.Range).Value2.GetType().ToString();
         }
 
-        private void button3_Click(object sender, EventArgs e)
+        /// <summary>
+        /// Cleanup button event handler.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void CleanupButton_Click(object sender, EventArgs e)
         {
             GC.Collect();
             GC.WaitForPendingFinalizers();
+
+            //Original file cleanup
             Marshal.ReleaseComObject(xlRange);
             Marshal.ReleaseComObject(currentSheet);
             currentWorkbook.Close();
@@ -112,6 +119,73 @@ namespace MF_XLS_Parser
             int i = Int32.Parse(cellBox1.Text);
             int j = Int32.Parse(cellBox2.Text);
             (xlRange.Cells[i, j] as Excel.Range).Value2 = DataTextBox.Text;
+        }
+
+        /// <summary>
+        /// Start removal of unecessary cells and parse old cells to a new file.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ParsingButton_Click(object sender, EventArgs e)
+        {
+            Excel.Application newExcelApp;
+            Excel._Workbook newWorkBook;
+            Excel._Worksheet newSheet;
+            Excel.Range newExcelRange;
+
+
+
+            try
+            {
+                newExcelApp = new Excel.Application();
+                newExcelApp.Visible = true;
+                newWorkBook = (Excel._Workbook)(newExcelApp.Workbooks.Add(Missing.Value));
+                newSheet = (Excel._Worksheet)newWorkBook.ActiveSheet;
+
+
+
+                /////////////
+                int nullCount = 0;
+                int currentPosition = 9;
+                int newSheetPositionX = 1;
+                int newSheetPositionY = 1;
+
+                while (nullCount < 5)
+                {
+                    if (xlRange.Cells[currentPosition, 2] == null || xlRange.Cells[currentPosition, 2].Value2 == null)
+                    {
+                        nullCount++;
+                    }
+                    else
+                    {
+                        nullCount = 0;
+                        if (xlRange.Cells[currentPosition, 2].Value2 is string s)
+                        {
+                            newSheet.Cells[newSheetPositionY, newSheetPositionX] = (string)(xlRange.Cells[currentPosition, 2] as Excel.Range).Value2;
+                            newSheetPositionY++;
+                        }
+                        else if (xlRange.Cells[currentPosition, 2].Value2 is double d)
+                        {
+                            newSheet.Cells[newSheetPositionY, newSheetPositionX] = (xlRange.Cells[currentPosition, 2] as Excel.Range).Value2.ToString();
+                        }
+
+                    }
+                    currentPosition++;
+                    if (currentPosition > 21000) break; //debug
+                }
+
+                /////////////
+            }
+
+            catch(Exception ex)
+            {
+                String errorMessage;
+                errorMessage = "Error: ";
+                errorMessage = String.Concat(errorMessage, ex.Message);
+                errorMessage = String.Concat(errorMessage, "\n Full String: ");
+                errorMessage = String.Concat(errorMessage, ex.ToString());
+                MessageBox.Show(errorMessage, "Error");
+            }
         }
     }
 }

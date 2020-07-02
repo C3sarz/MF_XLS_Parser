@@ -32,11 +32,12 @@
             this.InfoTextBox = new System.Windows.Forms.TextBox();
             this.DataTextBox = new System.Windows.Forms.TextBox();
             this.button2 = new System.Windows.Forms.Button();
-            this.button3 = new System.Windows.Forms.Button();
+            this.CleanupButton = new System.Windows.Forms.Button();
             this.CellSearchTextBox = new System.Windows.Forms.TextBox();
             this.cellBox1 = new System.Windows.Forms.TextBox();
             this.cellBox2 = new System.Windows.Forms.TextBox();
             this.WriteButton = new System.Windows.Forms.Button();
+            this.ParsingButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // Button1
@@ -45,7 +46,7 @@
             this.Button1.Name = "Button1";
             this.Button1.Size = new System.Drawing.Size(142, 52);
             this.Button1.TabIndex = 0;
-            this.Button1.Text = "Open File";
+            this.Button1.Text = "Abrir archivo";
             this.Button1.UseVisualStyleBackColor = true;
             this.Button1.Click += new System.EventHandler(this.Button1_Click);
             // 
@@ -76,15 +77,15 @@
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
-            // button3
+            // CleanupButton
             // 
-            this.button3.Location = new System.Drawing.Point(63, 280);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(142, 52);
-            this.button3.TabIndex = 4;
-            this.button3.Text = "button3";
-            this.button3.UseVisualStyleBackColor = true;
-            this.button3.Click += new System.EventHandler(this.button3_Click);
+            this.CleanupButton.Location = new System.Drawing.Point(63, 280);
+            this.CleanupButton.Name = "CleanupButton";
+            this.CleanupButton.Size = new System.Drawing.Size(142, 52);
+            this.CleanupButton.TabIndex = 4;
+            this.CleanupButton.Text = "Close all";
+            this.CleanupButton.UseVisualStyleBackColor = true;
+            this.CleanupButton.Click += new System.EventHandler(this.CleanupButton_Click);
             // 
             // CellSearchTextBox
             // 
@@ -121,16 +122,27 @@
             this.WriteButton.UseVisualStyleBackColor = true;
             this.WriteButton.Click += new System.EventHandler(this.WriteButton_Click);
             // 
+            // ParsingButton
+            // 
+            this.ParsingButton.Location = new System.Drawing.Point(223, 280);
+            this.ParsingButton.Name = "ParsingButton";
+            this.ParsingButton.Size = new System.Drawing.Size(142, 52);
+            this.ParsingButton.TabIndex = 10;
+            this.ParsingButton.Text = "Start parsing";
+            this.ParsingButton.UseVisualStyleBackColor = true;
+            this.ParsingButton.Click += new System.EventHandler(this.ParsingButton_Click);
+            // 
             // Main_Form
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.ParsingButton);
             this.Controls.Add(this.WriteButton);
             this.Controls.Add(this.cellBox2);
             this.Controls.Add(this.cellBox1);
             this.Controls.Add(this.CellSearchTextBox);
-            this.Controls.Add(this.button3);
+            this.Controls.Add(this.CleanupButton);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.DataTextBox);
             this.Controls.Add(this.InfoTextBox);
@@ -148,11 +160,12 @@
         private System.Windows.Forms.TextBox InfoTextBox;
         private System.Windows.Forms.TextBox DataTextBox;
         private System.Windows.Forms.Button button2;
-        private System.Windows.Forms.Button button3;
+        private System.Windows.Forms.Button CleanupButton;
         private System.Windows.Forms.TextBox CellSearchTextBox;
         private System.Windows.Forms.TextBox cellBox1;
         private System.Windows.Forms.TextBox cellBox2;
         private System.Windows.Forms.Button WriteButton;
+        private System.Windows.Forms.Button ParsingButton;
     }
 }
 
