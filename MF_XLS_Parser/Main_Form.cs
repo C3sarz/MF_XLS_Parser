@@ -87,7 +87,7 @@ namespace MF_XLS_Parser
                 {
                     DataTextBox.Text = (string)(xlRange.Cells[i, j] as Excel.Range).Value2;
                 }
-                else DataTextBox.Text = "Empty Cell";
+                else DataTextBox.Text = "Celda Vacia";
             }
 
             catch (RuntimeBinderException ex)
@@ -137,7 +137,7 @@ namespace MF_XLS_Parser
                 Marshal.ReleaseComObject(excelApp);
             }
 
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 MessageBox.Show("Error: No hay documento para cerrar.");
             }
@@ -181,18 +181,19 @@ namespace MF_XLS_Parser
                 int currentPosition = 9;
                 int newSheetPositionX = 1;
                 int newSheetPositionY = 1;
+                int parsedColumn = 1;
 
                 // Iteration through cells.
                 while (nullCount < 10)
                 {
-                    if (xlRange.Cells[currentPosition, 1] == null || xlRange.Cells[currentPosition, 1].Value2 == null)
+                    if (xlRange.Cells[currentPosition, parsedColumn] == null || xlRange.Cells[currentPosition, parsedColumn].Value2 == null)
                     {
                         nullCount++;
                     }
                     else
                     {
                         nullCount = 0;
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (string)(xlRange.Cells[currentPosition, 1] as Excel.Range).Value2;
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (string)(xlRange.Cells[currentPosition, parsedColumn] as Excel.Range).Value2;
                         newSheetPositionY++;
                     }
                     currentPosition++;
@@ -217,26 +218,42 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
         {
+            int newSheetPositionX = 3;
+            int newSheetPositionY = 1;
+            int parsedColumn = 18;
+            //Parse names
+            startParsing(9, newSheetPositionX, newSheetPositionY, parsedColumn);
+        }
+
+        /// <summary>
+        /// Parses a specified column on the Excel file into a new one.
+        /// </summary>
+        /// <param name="startingRow">Row to start parsing.</param>
+        /// <param name="parsedColumn">Column to be parsed.</param>
+        /// <param name="newSheetPositionX">Starting column cell in which the parsed data is copied.</param>
+        /// <param name="newSheetPositionY">Starting row cell in which the parsed data is copied.</param>
+        private void startParsing(int startingRow, int parsedColumn, int newSheetPositionX, int newSheetPositionY)
+        {
             try
             {
                 int nullCount = 0;
-                int currentPosition = 9;
-                int newSheetPositionX = 3;
-                int newSheetPositionY = 1;
+                int currentPosition = startingRow;
 
                 // Iteration through cells.
                 while (nullCount < 10)
                 {
-                    if (xlRange.Cells[currentPosition, 18] == null || xlRange.Cells[currentPosition, 18].Value2 == null)
+                    if (xlRange.Cells[currentPosition, parsedColumn] == null || xlRange.Cells[currentPosition, parsedColumn].Value2 == null)
                     {
                         nullCount++;
                     }
                     else
                     {
                         nullCount = 0;
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (string)(xlRange.Cells[currentPosition, 18] as Excel.Range).Value2;
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (string)(xlRange.Cells[currentPosition, parsedColumn] as Excel.Range).Value2;
                         newSheetPositionY++;
                     }
+                    //Current cell output to textbox.
+                    InfoTextBox.Text = currentPosition.ToString();
                     currentPosition++;
                 }
             }
@@ -251,6 +268,18 @@ namespace MF_XLS_Parser
                 errorMessage = String.Concat(errorMessage, ex.ToString());
                 MessageBox.Show(errorMessage, "Error");
             }
+        }
+
+
+
+        /// <summary>
+        /// Background worker 3 work method.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BackgroundWorker3_DoWork(object sender, DoWorkEventArgs e)
+        {
+            //Empty
         }
 
         /// <summary>
