@@ -123,16 +123,24 @@ namespace MF_XLS_Parser
         /// </summary>
         private void Cleanup()
         {
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+            try
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
 
-            //Original file cleanup
-            Marshal.ReleaseComObject(xlRange);
-            Marshal.ReleaseComObject(currentSheet);
-            currentWorkbook.Close();
-            Marshal.ReleaseComObject(currentWorkbook);
-            excelApp.Quit();
-            Marshal.ReleaseComObject(excelApp);
+                //Original file cleanup
+                Marshal.ReleaseComObject(xlRange);
+                Marshal.ReleaseComObject(currentSheet);
+                currentWorkbook.Close();
+                Marshal.ReleaseComObject(currentWorkbook);
+                excelApp.Quit();
+                Marshal.ReleaseComObject(excelApp);
+            }
+
+            catch(Exception ex)
+            {
+                MessageBox.Show("Error: No hay documento para cerrar.");
+            }
         }
 
         private void WriteButton_Click(object sender, EventArgs e)
@@ -177,14 +185,14 @@ namespace MF_XLS_Parser
                 // Iteration through cells.
                 while (nullCount < 10)
                 {
-                    if (xlRange.Cells[currentPosition, 2] == null || xlRange.Cells[currentPosition, 2].Value2 == null)
+                    if (xlRange.Cells[currentPosition, 1] == null || xlRange.Cells[currentPosition, 1].Value2 == null)
                     {
                         nullCount++;
                     }
                     else
                     {
                         nullCount = 0;
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (string)(xlRange.Cells[currentPosition, 2] as Excel.Range).Value2;
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (string)(xlRange.Cells[currentPosition, 1] as Excel.Range).Value2;
                         newSheetPositionY++;
                     }
                     currentPosition++;
@@ -219,14 +227,14 @@ namespace MF_XLS_Parser
                 // Iteration through cells.
                 while (nullCount < 10)
                 {
-                    if (xlRange.Cells[currentPosition, 19] == null || xlRange.Cells[currentPosition, 19].Value2 == null)
+                    if (xlRange.Cells[currentPosition, 18] == null || xlRange.Cells[currentPosition, 18].Value2 == null)
                     {
                         nullCount++;
                     }
                     else
                     {
                         nullCount = 0;
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (string)(xlRange.Cells[currentPosition, 19] as Excel.Range).Value2;
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (string)(xlRange.Cells[currentPosition, 18] as Excel.Range).Value2;
                         newSheetPositionY++;
                     }
                     currentPosition++;
