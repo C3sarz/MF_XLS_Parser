@@ -37,11 +37,13 @@
             this.cellBox1 = new System.Windows.Forms.TextBox();
             this.cellBox2 = new System.Windows.Forms.TextBox();
             this.WriteButton = new System.Windows.Forms.Button();
-            this.ParsingButton = new System.Windows.Forms.Button();
+            this.StartButton = new System.Windows.Forms.Button();
             this.LoadingImage = new System.Windows.Forms.PictureBox();
             this.RowConfirmButton = new System.Windows.Forms.Button();
             this.RowBox = new System.Windows.Forms.TextBox();
             this.AppLoadingImage = new System.Windows.Forms.PictureBox();
+            this.FilterStartButton = new System.Windows.Forms.Button();
+            this.FilterBox = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.LoadingImage)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.AppLoadingImage)).BeginInit();
             this.SuspendLayout();
@@ -75,7 +77,7 @@
             // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(63, 200);
+            this.button2.Location = new System.Drawing.Point(211, 119);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(142, 52);
             this.button2.TabIndex = 3;
@@ -85,11 +87,11 @@
             // 
             // CleanupButton
             // 
-            this.CleanupButton.Location = new System.Drawing.Point(63, 280);
+            this.CleanupButton.Location = new System.Drawing.Point(63, 177);
             this.CleanupButton.Name = "CleanupButton";
             this.CleanupButton.Size = new System.Drawing.Size(142, 52);
             this.CleanupButton.TabIndex = 4;
-            this.CleanupButton.Text = "Close all";
+            this.CleanupButton.Text = "Cerrar Excel Cargado";
             this.CleanupButton.UseVisualStyleBackColor = true;
             this.CleanupButton.Click += new System.EventHandler(this.CleanupButton_Click);
             // 
@@ -120,7 +122,7 @@
             // 
             // WriteButton
             // 
-            this.WriteButton.Location = new System.Drawing.Point(263, 200);
+            this.WriteButton.Location = new System.Drawing.Point(359, 119);
             this.WriteButton.Name = "WriteButton";
             this.WriteButton.Size = new System.Drawing.Size(142, 52);
             this.WriteButton.TabIndex = 9;
@@ -128,22 +130,22 @@
             this.WriteButton.UseVisualStyleBackColor = true;
             this.WriteButton.Click += new System.EventHandler(this.WriteButton_Click);
             // 
-            // ParsingButton
+            // StartButton
             // 
-            this.ParsingButton.Enabled = false;
-            this.ParsingButton.Location = new System.Drawing.Point(263, 280);
-            this.ParsingButton.Name = "ParsingButton";
-            this.ParsingButton.Size = new System.Drawing.Size(142, 52);
-            this.ParsingButton.TabIndex = 10;
-            this.ParsingButton.Text = "Start parsing";
-            this.ParsingButton.UseVisualStyleBackColor = true;
-            this.ParsingButton.Click += new System.EventHandler(this.ParsingButton_Click);
+            this.StartButton.Enabled = false;
+            this.StartButton.Location = new System.Drawing.Point(63, 280);
+            this.StartButton.Name = "StartButton";
+            this.StartButton.Size = new System.Drawing.Size(142, 52);
+            this.StartButton.TabIndex = 10;
+            this.StartButton.Text = "Empezar proceso";
+            this.StartButton.UseVisualStyleBackColor = true;
+            this.StartButton.Click += new System.EventHandler(this.StartButton_Click);
             // 
             // LoadingImage
             // 
             this.LoadingImage.Image = global::MF_XLS_Parser.Properties.Resources.loading;
             this.LoadingImage.InitialImage = global::MF_XLS_Parser.Properties.Resources.loading;
-            this.LoadingImage.Location = new System.Drawing.Point(211, 280);
+            this.LoadingImage.Location = new System.Drawing.Point(12, 280);
             this.LoadingImage.Name = "LoadingImage";
             this.LoadingImage.Size = new System.Drawing.Size(50, 52);
             this.LoadingImage.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -154,9 +156,9 @@
             // 
             // RowConfirmButton
             // 
-            this.RowConfirmButton.Location = new System.Drawing.Point(263, 348);
+            this.RowConfirmButton.Location = new System.Drawing.Point(63, 348);
             this.RowConfirmButton.Name = "RowConfirmButton";
-            this.RowConfirmButton.Size = new System.Drawing.Size(90, 52);
+            this.RowConfirmButton.Size = new System.Drawing.Size(61, 52);
             this.RowConfirmButton.TabIndex = 12;
             this.RowConfirmButton.Text = "Confirmar Fila";
             this.RowConfirmButton.UseVisualStyleBackColor = true;
@@ -164,7 +166,7 @@
             // 
             // RowBox
             // 
-            this.RowBox.Location = new System.Drawing.Point(359, 365);
+            this.RowBox.Location = new System.Drawing.Point(130, 365);
             this.RowBox.Name = "RowBox";
             this.RowBox.Size = new System.Drawing.Size(66, 20);
             this.RowBox.TabIndex = 13;
@@ -182,16 +184,36 @@
             this.AppLoadingImage.UseWaitCursor = true;
             this.AppLoadingImage.Visible = false;
             // 
+            // FilterStartButton
+            // 
+            this.FilterStartButton.Enabled = false;
+            this.FilterStartButton.Location = new System.Drawing.Point(211, 280);
+            this.FilterStartButton.Name = "FilterStartButton";
+            this.FilterStartButton.Size = new System.Drawing.Size(142, 52);
+            this.FilterStartButton.TabIndex = 15;
+            this.FilterStartButton.Text = "Empezar proceso (Filtro)";
+            this.FilterStartButton.UseVisualStyleBackColor = true;
+            this.FilterStartButton.Click += new System.EventHandler(this.FilterStartButton_Click);
+            // 
+            // FilterBox
+            // 
+            this.FilterBox.Location = new System.Drawing.Point(211, 365);
+            this.FilterBox.Name = "FilterBox";
+            this.FilterBox.Size = new System.Drawing.Size(142, 20);
+            this.FilterBox.TabIndex = 16;
+            // 
             // Main_Form
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.FilterBox);
+            this.Controls.Add(this.FilterStartButton);
             this.Controls.Add(this.AppLoadingImage);
             this.Controls.Add(this.RowBox);
             this.Controls.Add(this.RowConfirmButton);
             this.Controls.Add(this.LoadingImage);
-            this.Controls.Add(this.ParsingButton);
+            this.Controls.Add(this.StartButton);
             this.Controls.Add(this.WriteButton);
             this.Controls.Add(this.cellBox2);
             this.Controls.Add(this.cellBox1);
@@ -221,11 +243,13 @@
         private System.Windows.Forms.TextBox cellBox1;
         private System.Windows.Forms.TextBox cellBox2;
         private System.Windows.Forms.Button WriteButton;
-        private System.Windows.Forms.Button ParsingButton;
+        private System.Windows.Forms.Button StartButton;
         private System.Windows.Forms.PictureBox LoadingImage;
         private System.Windows.Forms.Button RowConfirmButton;
         private System.Windows.Forms.TextBox RowBox;
         private System.Windows.Forms.PictureBox AppLoadingImage;
+        private System.Windows.Forms.Button FilterStartButton;
+        private System.Windows.Forms.TextBox FilterBox;
     }
 }
 

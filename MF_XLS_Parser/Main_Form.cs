@@ -89,7 +89,7 @@ namespace MF_XLS_Parser
             //Worker setup.
             backgroundWorker1.DoWork += BackgroundWorker1_DoWork;
             backgroundWorker2.DoWork += BackgroundWorker2_DoWork;
-            backgroundWorker3.DoWork += BackgroundWorker1_DoWork;
+            backgroundWorker3.DoWork += BackgroundWorker3_DoWork;
             backgroundWorker1.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
             backgroundWorker2.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
             backgroundWorker3.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
@@ -166,7 +166,7 @@ namespace MF_XLS_Parser
         /// </summary>
         private void Cleanup()
         {
-            ParsingButton.Enabled = false;
+            StartButton.Enabled = false;
             try
             {
                 GC.Collect();
@@ -205,12 +205,12 @@ namespace MF_XLS_Parser
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void ParsingButton_Click(object sender, EventArgs e)
+        private void StartButton_Click(object sender, EventArgs e)
         {
             if (columnsReady)
             {
                 //Workbook
-                ParsingButton.Enabled = false;
+                StartButton.Enabled = false;
                 LoadingImage.Visible = true;
                 newExcelApp = new Excel.Application();
                 newExcelApp.Visible = true;
@@ -228,6 +228,31 @@ namespace MF_XLS_Parser
                 backgroundWorker2.RunWorkerAsync();
             }
             else MessageBox.Show("Por favor confimar la primera fila de datos.");
+        }
+
+        private void FilterStartButton_Click(object sender, EventArgs e)
+        {
+            if (columnsReady && FilterBox.Text != "")
+            {
+                //Workbook
+                StartButton.Enabled = false;
+                FilterStartButton.Enabled = false;
+                LoadingImage.Visible = true;
+                newExcelApp = new Excel.Application();
+                newExcelApp.Visible = true;
+                newWorkBook = (Excel._Workbook)(newExcelApp.Workbooks.Add(Missing.Value));
+                newSheet = (Excel._Worksheet)newWorkBook.ActiveSheet;
+                //Sheet setup
+                newSheet.Cells[1, 1] = "Codigo";
+                newSheet.Cells[1, 2] = "Producto";
+                newSheet.Cells[1, 3] = "Cantidad";
+                newSheet.Cells[1, 4] = "Total";
+
+                //Launch worker threads.
+                workersCompleted = 1;
+                backgroundWorker3.RunWorkerAsync();
+            }
+            else MessageBox.Show("Por favor confimar fila y filtro");
         }
 
         /// <summary>
@@ -313,6 +338,7 @@ namespace MF_XLS_Parser
                 }
             }
 
+
             //Error handling
             catch (Exception ex)
             {
@@ -323,7 +349,63 @@ namespace MF_XLS_Parser
                 errorMessage = String.Concat(errorMessage, ex.ToString());
                 MessageBox.Show(errorMessage, "Error");
             }
-        
+        }
+
+        /// <summary>
+        /// Transfers a specified column on the Excel file into a new one, skipping null cells and filtering unwanted items.
+        /// </summary>
+        /// <param name="startingRow">Row to start parsing.</param>
+        /// <param name="newSheetPositionX">Starting column cell in which the parsed data is copied.</param>
+        /// <param name="newSheetPositionY">Starting row cell in which the parsed data is copied.</param>
+        /// <param name="filterTerm">Filter term</param>
+        private void startFullTransfer(int startingRow, int newSheetPositionX, int newSheetPositionY, string filterTerm)
+        {
+            try
+            {
+                int nullCount = 0;
+                int currentPosition = startingRow;
+                int namesColumn = columns[2];
+                int quantityColumn = columns[3];
+
+                // Iteration through cells.
+                while (nullCount < 10)
+                {
+                    if (xlRange.Cells[currentPosition, namesColumn] == null || xlRange.Cells[currentPosition, namesColumn].Value2 == null)
+                    {
+                        nullCount++;
+                    }
+                    else
+                    {
+                        nullCount = 0;
+                        string currentString = xlRange.Cells[currentPosition, namesColumn].Value2;
+                        if (currentString.Contains(filterTerm))
+                        {
+                            //Name copying.
+                            newSheet.Cells[newSheetPositionY, newSheetPositionX] = (xlRange.Cells[currentPosition, namesColumn]).Value2;
+
+                            //Quantity copying.
+                            newSheet.Cells[newSheetPositionY, newSheetPositionX + 1] = (xlRange.Cells[currentPosition, quantityColumn]).Value2.ToString();
+
+                            //Total copying.
+                            newSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = (xlRange.Cells[currentPosition, quantityColumn + 2]).Value2.ToString();
+
+
+                            newSheetPositionY++;
+                        }
+                    }
+                    currentPosition++;
+                }
+            }
+            //Error handling
+            catch (Exception ex)
+            {
+                String errorMessage;
+                errorMessage = "Error: ";
+                errorMessage = String.Concat(errorMessage, ex.Message);
+                errorMessage = String.Concat(errorMessage, "\n Full String: ");
+                errorMessage = String.Concat(errorMessage, ex.ToString());
+                MessageBox.Show(errorMessage, "Error");
+            }
         }
 
         private int[] getDataColumns(int firstDataRow)
@@ -333,7 +415,7 @@ namespace MF_XLS_Parser
             int[] dataColumns = new int[5];
             while (processedColumn < 5)
             {
-                if((xlRange.Cells[firstDataRow, position]).Value2 != null)
+                if ((xlRange.Cells[firstDataRow, position]).Value2 != null)
                 {
                     if (processedColumn == 0 && !Double.TryParse((xlRange.Cells[firstDataRow, position].Value2.ToString()), out double result))
                     {
@@ -370,12 +452,12 @@ namespace MF_XLS_Parser
             else
             {
 
-                    excelApp = new Excel.Application();
-                    excelApp.Visible = false;
-                    currentWorkbook = excelApp.Workbooks.Open(@fileName);
-                    currentSheet = (Excel.Worksheet)currentWorkbook.Worksheets.get_Item(1);
-                    xlRange = currentSheet.UsedRange;
-                
+                excelApp = new Excel.Application();
+                excelApp.Visible = false;
+                currentWorkbook = excelApp.Workbooks.Open(@fileName);
+                currentSheet = (Excel.Worksheet)currentWorkbook.Worksheets.get_Item(1);
+                xlRange = currentSheet.UsedRange;
+
             }
         }
 
@@ -398,33 +480,13 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void BackgroundWorker3_DoWork(object sender, DoWorkEventArgs e)
         {
-            int newSheetPositionX = 1;
+            int newSheetPositionX = 2;
             int newSheetPositionY = 3;
-            int parsedColumn = 1;
-            int startingRow = 9;
-            int quantityColumn = 30;
+
+
             try
             {
-                ////Get a range of not null cells;
-                //int nullCount = 0;
-                //int currentPosition = startingRow;
-                //int lastNotNull = startingRow;
-
-                //// Iteration through cells.
-                //while (nullCount < 10)
-                //{
-                //    if (xlRange.Cells[currentPosition, parsedColumn] == null || xlRange.Cells[currentPosition, parsedColumn].Value2 == null)
-                //    {
-                //        nullCount++;
-                //    }
-                //    else
-                //    {
-                //        nullCount = 0;
-                //        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (xlRange.Cells[currentPosition, parsedColumn]).Value2;
-                //        newSheetPositionY++;
-                //    }
-                //    currentPosition++;
-                //}
+                startFullTransfer(firstDataRow, newSheetPositionX, newSheetPositionY, FilterBox.Text);
             }
 
             //Error handling
@@ -451,8 +513,9 @@ namespace MF_XLS_Parser
                 workersCompleted++;
                 if (workersCompleted >= 2)
                 {
-                    ParsingButton.Enabled = true;
+                    StartButton.Enabled = true;
                     LoadingImage.Visible = false;
+                    FilterStartButton.Enabled = true;
                     columnsReady = false;
                     RowBox.BackColor = Color.White;
                     MessageBox.Show("Proceso completado");
@@ -461,7 +524,8 @@ namespace MF_XLS_Parser
             else
             {
                 AppLoadingImage.Visible = false;
-                ParsingButton.Enabled = true;
+                StartButton.Enabled = true;
+                FilterStartButton.Enabled = true;
                 OpenFileButton.Enabled = true;
             }
         }
@@ -474,12 +538,14 @@ namespace MF_XLS_Parser
                 columnsReady = true;
                 RowBox.BackColor = Color.LightGreen;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 columnsReady = false;
                 RowBox.BackColor = Color.White;
                 MessageBox.Show("Error confirmando fila.");
             }
         }
+
+
     }
 }
