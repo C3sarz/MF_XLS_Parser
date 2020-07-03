@@ -121,6 +121,7 @@ namespace MF_XLS_Parser
             OpenFileDialog openDialog = new OpenFileDialog();
             if (openDialog.ShowDialog() == DialogResult.OK)
             {
+                state = State.LoadingFile;
                 OpenFileButton.Enabled = false;
                 fileName = openDialog.FileName;
                 DataTextBox.Text = fileName;
@@ -224,6 +225,7 @@ namespace MF_XLS_Parser
         {
             if (dataColumnsReady)
             {
+                state = State.FullProcessing;
                 //Workbook
                 StartButton.Enabled = false;
                 LoadingImage.Visible = true;
@@ -253,6 +255,7 @@ namespace MF_XLS_Parser
         {
             if (dataColumnsReady && FilterBox.Text != "")
             {
+                state = State.FullProcessing;
                 //Workbook
                 StartButton.Enabled = false;
                 FilterStartButton.Enabled = false;
@@ -278,6 +281,7 @@ namespace MF_XLS_Parser
         {
             if (dataColumnsReady)
             {
+                state = State.Testing;
                 //Workbook
                 StartButton.Enabled = false;
                 LoadingImage.Visible = true;
@@ -366,21 +370,30 @@ namespace MF_XLS_Parser
                 int sectionColumn = typeColumns[0];
                 int groupColumn = typeColumns[0] + 1;
                 int categoryColumn = typeColumns[0] + 2;
-                int subCategoryumn = typeColumns[0] + 3;
+                int subCategoryColumn = typeColumns[0] + 3;
 
                 // Iteration through cells.
                 while (nullCount < 10)
                 {
                     if (xlRange.Cells[currentPosition, namesColumn] == null || xlRange.Cells[currentPosition, namesColumn].Value2 == null)
                     {
-
-                        switch(findUsedColumn(currentPosition, 1))
+                        int type = findUsedColumn(currentPosition, 1);
+                        if(type == sectionColumn)
                         {
-                            case typeColumns[0]:
-
-                                break;
+                            section = (xlRange.Cells[currentPosition, sectionColumn+8]).Value2;
                         }
-
+                        else if(type == groupColumn)
+                        {
+                            group = (xlRange.Cells[currentPosition, groupColumn + 9]).Value2;
+                        }
+                        else if (type == categoryColumn)
+                        {
+                            category = (xlRange.Cells[currentPosition, categoryColumn + 10]).Value2;
+                        }
+                        else if (type == subCategoryColumn)
+                        {
+                            subCategory = (xlRange.Cells[currentPosition, subCategoryColumn + 11]).Value2;
+                        }
 
                         nullCount++;
                     }
@@ -396,7 +409,14 @@ namespace MF_XLS_Parser
                         //Total copying.
                         newSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = (xlRange.Cells[currentPosition, quantityColumn + 2]).Value2.ToString();
 
-                        newSheetPositionY++;
+                        //Type copying
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = section;
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = group;
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = category;
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = subCategory;
+
+
+                         newSheetPositionY++;
                     }
                     currentPosition++;
                     if (state == State.Testing && currentPosition > 100) break;
@@ -556,7 +576,9 @@ namespace MF_XLS_Parser
             }
             else if(state == State.Testing)
             {
-
+                int newSheetPositionX = 2;
+                int newSheetPositionY = 3;
+                startFullTransfer(newSheetPositionX, newSheetPositionY);
             }
 
         }
@@ -645,6 +667,7 @@ namespace MF_XLS_Parser
                 FilterStartButton.Enabled = true;
                 OpenFileButton.Enabled = true;
             }
+            state = State.Idle;
         }
 
         /// <summary>
@@ -656,31 +679,19 @@ namespace MF_XLS_Parser
         {
             try
             {
-                dataColumns = getColumns(Int32.Parse(RowBox1.Text));
+                getColumns(Int32.Parse(RowBox1.Text), Int32.Parse(RowBox2.Text));
                 dataColumnsReady = true;
                 RowBox1.BackColor = Color.LightGreen;
-            }
-            catch (Exception ex)
-            {
-                dataColumnsReady = false;
-                RowBox1.BackColor = Color.White;
-                MessageBox.Show("Error confirmando fila.");
-            }
-        }
-
-        private void TypeConfirmButton_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                typeColumns = getTypeColumns(Int32.Parse(RowBox2.Text));
                 typeColumnsReady = true;
                 RowBox2.BackColor = Color.LightGreen;
             }
             catch (Exception ex)
             {
+                dataColumnsReady = false;
+                RowBox1.BackColor = Color.White;
                 typeColumnsReady = false;
                 RowBox2.BackColor = Color.White;
-                MessageBox.Show("Error confirmando fila.");
+                MessageBox.Show("Error confirmando filas.");
             }
         }
 
@@ -693,9 +704,10 @@ namespace MF_XLS_Parser
         public int findUsedColumn(int row, int startCol)
         {
             int currentCol = startCol;
-            while(xlRange.Cells[row, currentCol] == null || xlRange.Cells[row, currentCol].Value2 == null)
+            while(xlRange.Cells[row, currentCol] == null || xlRange.Cells[row, currentCol].Value2 == null )
             {
                 currentCol++;
+                if (currentCol >= 70) return -1;
             }
             return currentCol;
         }

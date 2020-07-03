@@ -45,7 +45,6 @@
             this.FilterStartButton = new System.Windows.Forms.Button();
             this.FilterBox = new System.Windows.Forms.TextBox();
             this.TestButton = new System.Windows.Forms.Button();
-            this.TypeConfirmButton = new System.Windows.Forms.Button();
             this.RowBox2 = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.LoadingImage)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.AppLoadingImage)).BeginInit();
@@ -233,17 +232,6 @@
             this.TestButton.UseVisualStyleBackColor = true;
             this.TestButton.Click += new System.EventHandler(this.TestButton_Click);
             // 
-            // TypeConfirmButton
-            // 
-            this.TypeConfirmButton.Location = new System.Drawing.Point(673, 417);
-            this.TypeConfirmButton.Margin = new System.Windows.Forms.Padding(4);
-            this.TypeConfirmButton.Name = "TypeConfirmButton";
-            this.TypeConfirmButton.Size = new System.Drawing.Size(165, 64);
-            this.TypeConfirmButton.TabIndex = 18;
-            this.TypeConfirmButton.Text = "Confirmar primera fila de organizacion";
-            this.TypeConfirmButton.UseVisualStyleBackColor = true;
-            this.TypeConfirmButton.Click += new System.EventHandler(this.TypeConfirmButton_Click);
-            // 
             // RowBox2
             // 
             this.RowBox2.Location = new System.Drawing.Point(846, 438);
@@ -258,7 +246,6 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1067, 554);
             this.Controls.Add(this.RowBox2);
-            this.Controls.Add(this.TypeConfirmButton);
             this.Controls.Add(this.TestButton);
             this.Controls.Add(this.FilterBox);
             this.Controls.Add(this.FilterStartButton);
@@ -305,7 +292,6 @@
         private System.Windows.Forms.Button FilterStartButton;
         private System.Windows.Forms.TextBox FilterBox;
         private System.Windows.Forms.Button TestButton;
-        private System.Windows.Forms.Button TypeConfirmButton;
         private System.Windows.Forms.TextBox RowBox2;
     }
 }
