@@ -107,7 +107,9 @@ namespace MF_XLS_Parser
             backgroundWorker4.DoWork += BackgroundWorker4_DoWork;
             backgroundWorker1.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
             backgroundWorker2.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
+            backgroundWorker3.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
             backgroundWorker4.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
+    
         }
 
         /// <summary>
@@ -241,7 +243,7 @@ namespace MF_XLS_Parser
                 newSheet.Cells[1, 5] = "Seccion";
                 newSheet.Cells[1, 6] = "Grupo";
                 newSheet.Cells[1, 7] = "Categoria";
-                newSheet.Cells[1, 8] = "Sub-Categoria   ";
+                newSheet.Cells[1, 8] = "Sub-Categoria";
 
                 //Launch worker threads.
                 workersCompleted = 0;
@@ -292,6 +294,7 @@ namespace MF_XLS_Parser
                 //Sheet setup
                 newSheet.Cells[1, 1] = "Codigo";
                 newSheet.Cells[1, 2] = "Producto";
+                (newSheet.Cells[1, 2] as Excel.Range).ColumnWidth = 45;
                 newSheet.Cells[1, 3] = "Cantidad";
                 newSheet.Cells[1, 4] = "Total";
                 newSheet.Cells[1, 5] = "Seccion";
@@ -333,8 +336,18 @@ namespace MF_XLS_Parser
                         nullCount = 0;
                         newSheet.Cells[newSheetPositionY, newSheetPositionX] = (xlRange.Cells[currentPosition, parsedColumn]).Value2;
                         newSheetPositionY++;
+                        if (state == State.Testing && newSheetPositionY > 100) break;
                     }
                     currentPosition++;
+                }
+                newSheetPositionY--;
+
+                if (state == State.FullProcessing)
+                {
+                    for (int i = 0; i < 9; i++)
+                    {
+                        newSheet.Cells[newSheetPositionY - i, newSheetPositionX] = null;
+                    }
                 }
             }
             //Error handling
@@ -418,9 +431,9 @@ namespace MF_XLS_Parser
 
 
                          newSheetPositionY++;
+                        if (state == State.Testing && newSheetPositionY > 100) break;
                     }
                     currentPosition++;
-                    if (state == State.Testing && currentPosition > 100) break;
                 }
             }
             //Error handling
@@ -492,8 +505,6 @@ namespace MF_XLS_Parser
             }
         }
 
-
-
         private void getColumns(int firstDataRow, int firstTypeRow)
         {
             int processedColumn = 0;
@@ -532,9 +543,6 @@ namespace MF_XLS_Parser
             }
         }
 
-
-
-
         /// <summary>
         /// Background worker 1 work method.
         /// </summary>
@@ -552,14 +560,11 @@ namespace MF_XLS_Parser
             }
             else
             {
-
                 excelApp = new Excel.Application();
                 excelApp.Visible = false;
                 currentWorkbook = excelApp.Workbooks.Open(@fileName);
                 currentSheet = (Excel.Worksheet)currentWorkbook.Worksheets.get_Item(1);
-                xlRange = currentSheet.UsedRange;
-
-            }
+                xlRange = currentSheet.UsedRange;            }
         }
 
         /// <summary>
@@ -593,7 +598,6 @@ namespace MF_XLS_Parser
         {
             int newSheetPositionX = 2;
             int newSheetPositionY = 3;
-
 
             try
             {
@@ -658,6 +662,8 @@ namespace MF_XLS_Parser
                     dataColumnsReady = false;
                     typeColumnsReady = false;
                     RowBox1.BackColor = Color.White;
+                    RowBox2.BackColor = Color.White;
+                    //Cleanup();
                     MessageBox.Show("Proceso completado");
                 }
             }
