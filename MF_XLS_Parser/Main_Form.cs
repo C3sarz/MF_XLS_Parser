@@ -300,7 +300,7 @@ namespace MF_XLS_Parser
                 newSheet.Cells[1, 8] = "Sub-Categoria   ";
 
                 //Launch worker threads.
-                workersCompleted = 0;
+                workersCompleted = 10;
                 backgroundWorker1.RunWorkerAsync();
                 backgroundWorker2.RunWorkerAsync();
             }
@@ -363,14 +363,15 @@ namespace MF_XLS_Parser
                 int currentPosition = startingRows[0];
                 int namesColumn = dataColumns[2];
                 int quantityColumn = dataColumns[3];
-                string section = xlRange.Cells[startingRows[1], typeColumns[0]].Value2;
-                string group = xlRange.Cells[startingRows[1]+1, typeColumns[0]+1].Value2;
-                string category = xlRange.Cells[startingRows[1] + 2, typeColumns[0]+2].Value2;
-                string subCategory = xlRange.Cells[startingRows[1] + 3, typeColumns[0]+3].Value2;
                 int sectionColumn = typeColumns[0];
                 int groupColumn = typeColumns[0] + 1;
                 int categoryColumn = typeColumns[0] + 2;
                 int subCategoryColumn = typeColumns[0] + 3;
+                string section = xlRange.Cells[startingRows[1], typeColumns[1]].Value2;
+                string group = xlRange.Cells[startingRows[1]+1, typeColumns[1]+2].Value2;
+                string category = xlRange.Cells[startingRows[1] + 2, typeColumns[1]+4].Value2;
+                string subCategory = xlRange.Cells[startingRows[1] + 3, typeColumns[1]+6].Value2;
+
 
                 // Iteration through cells.
                 while (nullCount < 10)
@@ -410,10 +411,10 @@ namespace MF_XLS_Parser
                         newSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = (xlRange.Cells[currentPosition, quantityColumn + 2]).Value2.ToString();
 
                         //Type copying
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = section;
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = group;
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = category;
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = subCategory;
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 3] = section;
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = group;
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 5] = category;
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 6] = subCategory;
 
 
                          newSheetPositionY++;
@@ -497,7 +498,7 @@ namespace MF_XLS_Parser
         {
             int processedColumn = 0;
             int position = 1;
-            int[] dataColumns = new int[5];
+            dataColumns = new int[5];
             while (processedColumn < 5)
             {
                 if ((xlRange.Cells[firstDataRow, position]).Value2 != null)
@@ -521,7 +522,7 @@ namespace MF_XLS_Parser
             typeColumns = new int[4];
             while (processedColumn < 4)
             {
-                if ((xlRange.Cells[firstDataRow, position]).Value2 != null)
+                if ((xlRange.Cells[firstTypeRow, position]).Value2 != null)
                 {
                     typeColumns[processedColumn] = position;
                     processedColumn++;
@@ -664,6 +665,7 @@ namespace MF_XLS_Parser
             {
                 AppLoadingImage.Visible = false;
                 StartButton.Enabled = true;
+                TestButton.Enabled = true;
                 FilterStartButton.Enabled = true;
                 OpenFileButton.Enabled = true;
             }
