@@ -237,6 +237,7 @@ namespace MF_XLS_Parser
 
                 //Launch worker threads.
                 activeThreads = 2;
+                workerThreadEnabled = true;
                 backgroundWorker2.RunWorkerAsync();
                 backgroundWorker3.RunWorkerAsync();
             }
