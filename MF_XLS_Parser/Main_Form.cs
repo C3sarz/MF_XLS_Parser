@@ -222,10 +222,7 @@ namespace MF_XLS_Parser
                 //Workbook
                 StartButton.Enabled = false;
                 LoadingImage.Visible = true;
-                output.excelApp = new Excel.Application();
-                output.excelApp.Visible = true;
-                output.currentWorkbook = (Excel._Workbook)(output.excelApp.Workbooks.Add(Missing.Value));
-                output.currentSheet = (Excel._Worksheet)output.currentWorkbook.ActiveSheet;
+                output = new ExcelData(null);
 
                 //Sheet setup
                 output.currentSheet.Cells[1, 1] = "Codigo";
@@ -248,8 +245,8 @@ namespace MF_XLS_Parser
 
         private void FilterStartButton_Click(object sender, EventArgs e)
         {
-            if (output.dataColumnsReady 
-                && output.typeColumnsReady
+            if (input.dataColumnsReady 
+                && input.typeColumnsReady
                 && FilterBox.Text != "")
             {
                 state = State.FilterProcessing;
@@ -257,10 +254,7 @@ namespace MF_XLS_Parser
                 StartButton.Enabled = false;
                 FilterStartButton.Enabled = false;
                 LoadingImage.Visible = true;
-                output.excelApp = new Excel.Application();
-                output.excelApp.Visible = true;
-                output.currentWorkbook = (Excel._Workbook)(output.excelApp.Workbooks.Add(Missing.Value));
-                output.currentSheet = (Excel._Worksheet)output.currentWorkbook.ActiveSheet;
+                output = new ExcelData(null);
                 //Sheet setup
                 output.currentSheet.Cells[1, 1] = "Codigo";
                 output.currentSheet.Cells[1, 2] = "Producto";
@@ -283,16 +277,13 @@ namespace MF_XLS_Parser
 
         private void TestButton_Click(object sender, EventArgs e)
         {
-            if (output.dataColumnsReady && output.typeColumnsReady)
+            if (input.dataColumnsReady && input.typeColumnsReady)
             {
                 state = State.Testing;
                 //Workbook
                 StartButton.Enabled = false;
                 LoadingImage.Visible = true;
-                output.excelApp = new Excel.Application();
-                output.excelApp.Visible = true;
-                output.currentWorkbook = (Excel._Workbook)(output.excelApp.Workbooks.Add(Missing.Value));
-                output.currentSheet = (Excel._Worksheet)output.currentWorkbook.ActiveSheet;
+                output = new ExcelData(null);
 
                 //Sheet setup
                 output.currentSheet.Cells[1, 1] = "Codigo";

@@ -9,6 +9,7 @@ using Excel = Microsoft.Office.Interop.Excel;
 using System.Runtime.InteropServices;
 using System.Xml;
 using System.Windows.Forms;
+using System.Reflection;
 
 namespace MF_XLS_Parser
 {
@@ -65,7 +66,10 @@ namespace MF_XLS_Parser
         {
             if(fileName is null)
             {
-
+                excelApp = new Excel.Application();
+                excelApp.Visible = true;
+                currentWorkbook = (Excel._Workbook)(excelApp.Workbooks.Add(Missing.Value));
+                currentSheet = (Excel._Worksheet)currentWorkbook.ActiveSheet;
             }
             else
             {
@@ -73,6 +77,7 @@ namespace MF_XLS_Parser
                 excelApp.Visible = false;
                 currentWorkbook = excelApp.Workbooks.Open(@fileName);
                 currentSheet = (Excel.Worksheet)currentWorkbook.Worksheets.get_Item(1);
+                fullRange = currentSheet.UsedRange;
             }
             dataColumnsReady = false;
             typeColumnsReady = false;
