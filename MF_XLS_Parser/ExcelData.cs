@@ -56,12 +56,6 @@ namespace MF_XLS_Parser
         /// </summary>
         public int[] typeColumns;
 
-        /// <summary>
-        /// The file location of the current excel file.
-        /// </summary>
-        private string fileName;
-
-
         public ExcelData(string fileName)
         {
             if(fileName is null)
@@ -75,7 +69,7 @@ namespace MF_XLS_Parser
             {
                 excelApp = new Excel.Application();
                 excelApp.Visible = false;
-                currentWorkbook = excelApp.Workbooks.Open(@fileName);
+                currentWorkbook = excelApp.Workbooks.Open(fileName);
                 currentSheet = (Excel.Worksheet)currentWorkbook.Worksheets.get_Item(1);
                 fullRange = currentSheet.UsedRange;
             }

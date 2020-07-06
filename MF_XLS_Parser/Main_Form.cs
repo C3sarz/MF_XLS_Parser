@@ -359,7 +359,7 @@ namespace MF_XLS_Parser
 
 
                 // Iteration through cells.
-                while (nullCount < 10)
+                while (nullCount < 10 && workerThreadEnabled)
                 {
                     if (input.fullRange.Cells[currentPosition, namesColumn] == null || input.fullRange.Cells[currentPosition, namesColumn].Value2 == null)
                     {
@@ -420,9 +420,9 @@ namespace MF_XLS_Parser
                     currentPosition++;
 
                     //Test case
-                    if (state == State.Testing 
-                        && newSheetPositionY >= 500
-                        && input.fullRange.Cells[currentPosition, namesColumn] == null) break;
+                    if (state == State.Testing
+                        && newSheetPositionY >= 300
+                        && nullCount > 0) workerThreadEnabled = false;
                 }
             }
 
@@ -483,7 +483,7 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
         {
-            if (state == State.FullProcessing)
+            if (state == State.FullProcessing || state == State.Testing)
             {
                 int newSheetPositionX = 2;
                 int newSheetPositionY = 3;
@@ -553,6 +553,8 @@ namespace MF_XLS_Parser
 
             else
             {
+
+                activeThreads--;
                 if (activeThreads < 1)
                 {
                     StartButton.Enabled = true;
@@ -569,7 +571,6 @@ namespace MF_XLS_Parser
                     state = State.Idle;
                     MessageBox.Show("Proceso completado");
                 }
-                activeThreads--;
             }            
         }
 
