@@ -109,7 +109,7 @@ namespace MF_XLS_Parser
             backgroundWorker2.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
             backgroundWorker3.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
             backgroundWorker4.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
-    
+
         }
 
         /// <summary>
@@ -287,9 +287,11 @@ namespace MF_XLS_Parser
                 //Workbook
                 StartButton.Enabled = false;
                 LoadingImage.Visible = true;
-                newExcelApp = new Excel.Application();
-                newExcelApp.Visible = true;
-                newWorkBook = (Excel._Workbook)(newExcelApp.Workbooks.Add(Missing.Value));
+                //newExcelApp = new Excel.Application();
+                //newExcelApp.Visible = true;
+                //newWorkBook = (Excel._Workbook)(newExcelApp.Workbooks.Add(Missing.Value));
+                excelApp.Visible = true;
+                newWorkBook = (Excel._Workbook)(excelApp.Workbooks.Add(Missing.Value));
                 newSheet = (Excel._Worksheet)newWorkBook.ActiveSheet;
                 //Sheet setup
                 newSheet.Cells[1, 1] = "Codigo";
@@ -303,9 +305,9 @@ namespace MF_XLS_Parser
                 newSheet.Cells[1, 8] = "Sub-Categoria   ";
 
                 //Launch worker threads.
-                workersCompleted = 10;
+                workersCompleted = 1;
                 backgroundWorker1.RunWorkerAsync();
-                backgroundWorker2.RunWorkerAsync();
+                //backgroundWorker2.RunWorkerAsync();
             }
             else MessageBox.Show("Por favor confimar la primera fila de datos.");
         }
@@ -317,38 +319,72 @@ namespace MF_XLS_Parser
         /// <param name="parsedColumn">Column to be parsed.</param>
         /// <param name="newSheetPositionX">Starting column cell in which the parsed data is copied.</param>
         /// <param name="newSheetPositionY">Starting row cell in which the parsed data is copied.</param>
-        private void startTransfer(int parsedColumn, int newSheetPositionX, int newSheetPositionY)
+        private void startTransfer(int newSheetPositionX, int newSheetPositionY)
         {
             try
             {
                 int nullCount = 0;
+                bool dataCopied = false;
+                int firstDataRow = startingRows[0];
+                int lastDataRow;
+
                 int currentPosition = startingRows[0];
+                int namesColumn = dataColumns[2];
+                int quantityColumn = dataColumns[3];
+                int sectionColumn = typeColumns[0];
+                int groupColumn = typeColumns[0] + 1;
+                int categoryColumn = typeColumns[0] + 2;
+                int subCategoryColumn = typeColumns[0] + 3;
+                string section = xlRange.Cells[startingRows[1], typeColumns[1]].Value2;
+                string group = xlRange.Cells[startingRows[1] + 1, typeColumns[1] + 2].Value2;
+                string category = xlRange.Cells[startingRows[1] + 2, typeColumns[1] + 4].Value2;
+                string subCategory = xlRange.Cells[startingRows[1] + 3, typeColumns[1] + 6].Value2;
 
                 // Iteration through cells.
                 while (nullCount < 10)
                 {
-                    if (xlRange.Cells[currentPosition, parsedColumn] == null || xlRange.Cells[currentPosition, parsedColumn].Value2 == null)
+                    if (xlRange.Cells[currentPosition, namesColumn] == null || xlRange.Cells[currentPosition, namesColumn].Value2 == null)
                     {
+                        if (!dataCopied)
+                        {
+                            lastDataRow = currentPosition - 1;
+
+
+
+                            dataCopied = true;
+                        }
+
+                        int type = findUsedColumn(currentPosition, 1);
+                        if (type == sectionColumn)
+                        {
+                            section = (xlRange.Cells[currentPosition, sectionColumn + 8]).Value2;
+                        }
+                        else if (type == groupColumn)
+                        {
+                            group = (xlRange.Cells[currentPosition, groupColumn + 9]).Value2;
+                        }
+                        else if (type == categoryColumn)
+                        {
+                            category = (xlRange.Cells[currentPosition, categoryColumn + 10]).Value2;
+                        }
+                        else if (type == subCategoryColumn)
+                        {
+                            subCategory = (xlRange.Cells[currentPosition, subCategoryColumn + 11]).Value2;
+                        }
+
                         nullCount++;
                     }
                     else
                     {
+                        if (dataCopied) firstDataRow = currentPosition;
                         nullCount = 0;
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX] = (xlRange.Cells[currentPosition, parsedColumn]).Value2;
-                        newSheetPositionY++;
+                        dataCopied = false;
+
                         if (state == State.Testing && newSheetPositionY > 100) break;
                     }
                     currentPosition++;
                 }
-                newSheetPositionY--;
 
-                if (state == State.FullProcessing)
-                {
-                    for (int i = 0; i < 9; i++)
-                    {
-                        newSheet.Cells[newSheetPositionY - i, newSheetPositionX] = null;
-                    }
-                }
             }
             //Error handling
             catch (Exception ex)
@@ -381,9 +417,9 @@ namespace MF_XLS_Parser
                 int categoryColumn = typeColumns[0] + 2;
                 int subCategoryColumn = typeColumns[0] + 3;
                 string section = xlRange.Cells[startingRows[1], typeColumns[1]].Value2;
-                string group = xlRange.Cells[startingRows[1]+1, typeColumns[1]+2].Value2;
-                string category = xlRange.Cells[startingRows[1] + 2, typeColumns[1]+4].Value2;
-                string subCategory = xlRange.Cells[startingRows[1] + 3, typeColumns[1]+6].Value2;
+                string group = xlRange.Cells[startingRows[1] + 1, typeColumns[1] + 2].Value2;
+                string category = xlRange.Cells[startingRows[1] + 2, typeColumns[1] + 4].Value2;
+                string subCategory = xlRange.Cells[startingRows[1] + 3, typeColumns[1] + 6].Value2;
 
 
                 // Iteration through cells.
@@ -392,11 +428,11 @@ namespace MF_XLS_Parser
                     if (xlRange.Cells[currentPosition, namesColumn] == null || xlRange.Cells[currentPosition, namesColumn].Value2 == null)
                     {
                         int type = findUsedColumn(currentPosition, 1);
-                        if(type == sectionColumn)
+                        if (type == sectionColumn)
                         {
-                            section = (xlRange.Cells[currentPosition, sectionColumn+8]).Value2;
+                            section = (xlRange.Cells[currentPosition, sectionColumn + 8]).Value2;
                         }
-                        else if(type == groupColumn)
+                        else if (type == groupColumn)
                         {
                             group = (xlRange.Cells[currentPosition, groupColumn + 9]).Value2;
                         }
@@ -430,7 +466,7 @@ namespace MF_XLS_Parser
                         newSheet.Cells[newSheetPositionY, newSheetPositionX + 6] = subCategory;
 
 
-                         newSheetPositionY++;
+                        newSheetPositionY++;
                         if (state == State.Testing && newSheetPositionY > 100) break;
                     }
                     currentPosition++;
@@ -467,7 +503,8 @@ namespace MF_XLS_Parser
                 // Iteration through cells.
                 while (nullCount < 10)
                 {
-                    if (xlRange.Cells[currentPosition, namesColumn] == null || xlRange.Cells[currentPosition, namesColumn].Value2 == null)
+                    //if (xlRange.Cells[currentPosition, namesColumn] == null || xlRange.Cells[currentPosition, namesColumn].Value2 == null)
+                    if (xlRange.Cells[currentPosition, namesColumn] == null)
                     {
                         nullCount++;
                     }
@@ -552,11 +589,9 @@ namespace MF_XLS_Parser
         {
             if (dataColumnsReady)
             {
-                int newSheetPositionX = 1;
+                int newSheetPositionX = 2;
                 int newSheetPositionY = 3;
-                int parsedColumn = dataColumns[0];
-                //Transfer codes
-                startTransfer(parsedColumn, newSheetPositionX, newSheetPositionY);
+                startTransfer(newSheetPositionX, newSheetPositionY);
             }
             else
             {
@@ -564,7 +599,8 @@ namespace MF_XLS_Parser
                 excelApp.Visible = false;
                 currentWorkbook = excelApp.Workbooks.Open(@fileName);
                 currentSheet = (Excel.Worksheet)currentWorkbook.Worksheets.get_Item(1);
-                xlRange = currentSheet.UsedRange;            }
+                xlRange = currentSheet.UsedRange;
+            }
         }
 
         /// <summary>
@@ -580,7 +616,7 @@ namespace MF_XLS_Parser
                 int newSheetPositionY = 3;
                 startFullTransfer(newSheetPositionX, newSheetPositionY);
             }
-            else if(state == State.Testing)
+            else if (state == State.Testing)
             {
                 int newSheetPositionX = 2;
                 int newSheetPositionY = 3;
@@ -629,7 +665,7 @@ namespace MF_XLS_Parser
 
             try
             {
-                
+
             }
 
             //Error handling
@@ -712,7 +748,7 @@ namespace MF_XLS_Parser
         public int findUsedColumn(int row, int startCol)
         {
             int currentCol = startCol;
-            while(xlRange.Cells[row, currentCol] == null || xlRange.Cells[row, currentCol].Value2 == null )
+            while (xlRange.Cells[row, currentCol] == null || xlRange.Cells[row, currentCol].Value2 == null)
             {
                 currentCol++;
                 if (currentCol >= 70) return -1;
