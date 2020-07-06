@@ -36,7 +36,6 @@
             this.CellSearchTextBox = new System.Windows.Forms.TextBox();
             this.cellBox1 = new System.Windows.Forms.TextBox();
             this.cellBox2 = new System.Windows.Forms.TextBox();
-            this.WriteButton = new System.Windows.Forms.Button();
             this.StartButton = new System.Windows.Forms.Button();
             this.LoadingImage = new System.Windows.Forms.PictureBox();
             this.RowConfirmButton = new System.Windows.Forms.Button();
@@ -87,7 +86,7 @@
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(189, 64);
             this.button2.TabIndex = 3;
-            this.button2.Text = "Show Cell Contents";
+            this.button2.Text = "Mostrar contenidos de celda";
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.ShowCellButton_Click);
             // 
@@ -112,7 +111,7 @@
             this.CellSearchTextBox.ReadOnly = true;
             this.CellSearchTextBox.Size = new System.Drawing.Size(184, 18);
             this.CellSearchTextBox.TabIndex = 6;
-            this.CellSearchTextBox.Text = "Cell Selection:";
+            this.CellSearchTextBox.Text = "Ubicacion de celda:";
             // 
             // cellBox1
             // 
@@ -129,17 +128,6 @@
             this.cellBox2.Name = "cellBox2";
             this.cellBox2.Size = new System.Drawing.Size(87, 22);
             this.cellBox2.TabIndex = 8;
-            // 
-            // WriteButton
-            // 
-            this.WriteButton.Location = new System.Drawing.Point(672, 218);
-            this.WriteButton.Margin = new System.Windows.Forms.Padding(4);
-            this.WriteButton.Name = "WriteButton";
-            this.WriteButton.Size = new System.Drawing.Size(189, 64);
-            this.WriteButton.TabIndex = 9;
-            this.WriteButton.Text = "Write to Cell";
-            this.WriteButton.UseVisualStyleBackColor = true;
-            this.WriteButton.Click += new System.EventHandler(this.WriteButton_Click);
             // 
             // StartButton
             // 
@@ -169,6 +157,7 @@
             // 
             // RowConfirmButton
             // 
+            this.RowConfirmButton.Enabled = false;
             this.RowConfirmButton.Location = new System.Drawing.Point(673, 345);
             this.RowConfirmButton.Margin = new System.Windows.Forms.Padding(4);
             this.RowConfirmButton.Name = "RowConfirmButton";
@@ -256,7 +245,6 @@
             this.Controls.Add(this.RowConfirmButton);
             this.Controls.Add(this.LoadingImage);
             this.Controls.Add(this.StartButton);
-            this.Controls.Add(this.WriteButton);
             this.Controls.Add(this.cellBox2);
             this.Controls.Add(this.cellBox1);
             this.Controls.Add(this.CellSearchTextBox);
@@ -285,7 +273,6 @@
         private System.Windows.Forms.TextBox CellSearchTextBox;
         private System.Windows.Forms.TextBox cellBox1;
         private System.Windows.Forms.TextBox cellBox2;
-        private System.Windows.Forms.Button WriteButton;
         private System.Windows.Forms.Button StartButton;
         private System.Windows.Forms.PictureBox LoadingImage;
         private System.Windows.Forms.Button RowConfirmButton;
