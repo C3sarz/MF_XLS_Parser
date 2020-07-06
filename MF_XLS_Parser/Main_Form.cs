@@ -292,7 +292,7 @@ namespace MF_XLS_Parser
                 StartButton.Enabled = false;
                 LoadingImage.Visible = true;
                 newExcelApp = new Excel.Application();
-                newExcelApp.Visible = true;
+                newExcelApp.Visible = false;
                 newWorkBook = (Excel._Workbook)(newExcelApp.Workbooks.Add(Missing.Value));
                 newSheet = (Excel._Worksheet)newWorkBook.ActiveSheet;
 
@@ -669,6 +669,7 @@ namespace MF_XLS_Parser
                     typeColumnsReady = false;
                     RowBox1.BackColor = Color.White;
                     RowBox2.BackColor = Color.White;
+                    newExcelApp.Visible = true;
                     //Cleanup();
                     MessageBox.Show("Proceso completado");
                 }
