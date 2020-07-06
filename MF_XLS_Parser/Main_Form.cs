@@ -14,6 +14,7 @@ using System.IO;
 using System.Security.Authentication;
 using Microsoft.CSharp.RuntimeBinder;
 using Microsoft.Office.Interop.Excel;
+using System.Collections.Concurrent;
 
 namespace MF_XLS_Parser
 {
@@ -78,11 +79,14 @@ namespace MF_XLS_Parser
 
         private bool dataColumnsReady = false;
         private bool typeColumnsReady = false;
+        public bool threadsWorking = false;
         private int[] dataColumns;
         private int[] typeColumns;
         private int[] startingRows;
         private string fileName;
         private State state = State.Idle;
+        private ConcurrentQueue<NamesBlock> namesQ = new ConcurrentQueue<NamesBlock>();
+        private ConcurrentQueue<DataBlock> numbersQ = new ConcurrentQueue<DataBlock>();
 
         public enum State
         {
@@ -287,12 +291,11 @@ namespace MF_XLS_Parser
                 //Workbook
                 StartButton.Enabled = false;
                 LoadingImage.Visible = true;
-                //newExcelApp = new Excel.Application();
-                //newExcelApp.Visible = true;
-                //newWorkBook = (Excel._Workbook)(newExcelApp.Workbooks.Add(Missing.Value));
-                excelApp.Visible = true;
-                newWorkBook = (Excel._Workbook)(excelApp.Workbooks.Add(Missing.Value));
+                newExcelApp = new Excel.Application();
+                newExcelApp.Visible = true;
+                newWorkBook = (Excel._Workbook)(newExcelApp.Workbooks.Add(Missing.Value));
                 newSheet = (Excel._Worksheet)newWorkBook.ActiveSheet;
+
                 //Sheet setup
                 newSheet.Cells[1, 1] = "Codigo";
                 newSheet.Cells[1, 2] = "Producto";
@@ -305,84 +308,26 @@ namespace MF_XLS_Parser
                 newSheet.Cells[1, 8] = "Sub-Categoria   ";
 
                 //Launch worker threads.
-                workersCompleted = 1;
-                backgroundWorker1.RunWorkerAsync();
-                //backgroundWorker2.RunWorkerAsync();
+                workersCompleted = 0;
+                threadsWorking = true;
+                backgroundWorker2.RunWorkerAsync();
+                backgroundWorker3.RunWorkerAsync();
             }
             else MessageBox.Show("Por favor confimar la primera fila de datos.");
         }
 
-        /// <summary>
-        /// Transfers a specified column on the Excel file into a new one, skipping null cells.
-        /// </summary>
-        /// <param name="startingRow">Row to start parsing.</param>
-        /// <param name="parsedColumn">Column to be parsed.</param>
-        /// <param name="newSheetPositionX">Starting column cell in which the parsed data is copied.</param>
-        /// <param name="newSheetPositionY">Starting row cell in which the parsed data is copied.</param>
-        private void startTransfer(int newSheetPositionX, int newSheetPositionY)
+        private void startNamesCopy(NamesBlock names)
         {
             try
             {
-                int nullCount = 0;
-                bool dataCopied = false;
-                int firstDataRow = startingRows[0];
-                int lastDataRow;
-
-                int currentPosition = startingRows[0];
-                int namesColumn = dataColumns[2];
-                int quantityColumn = dataColumns[3];
-                int sectionColumn = typeColumns[0];
-                int groupColumn = typeColumns[0] + 1;
-                int categoryColumn = typeColumns[0] + 2;
-                int subCategoryColumn = typeColumns[0] + 3;
-                string section = xlRange.Cells[startingRows[1], typeColumns[1]].Value2;
-                string group = xlRange.Cells[startingRows[1] + 1, typeColumns[1] + 2].Value2;
-                string category = xlRange.Cells[startingRows[1] + 2, typeColumns[1] + 4].Value2;
-                string subCategory = xlRange.Cells[startingRows[1] + 3, typeColumns[1] + 6].Value2;
-
                 // Iteration through cells.
-                while (nullCount < 10)
+                for(int i = names.StartRow; i <= names.EndRow;i++)
                 {
-                    if (xlRange.Cells[currentPosition, namesColumn] == null || xlRange.Cells[currentPosition, namesColumn].Value2 == null)
-                    {
-                        if (!dataCopied)
-                        {
-                            lastDataRow = currentPosition - 1;
+                    newSheet.Cells[i, 5] = names.Section;
+                    newSheet.Cells[i, 6] = names.Group;
+                    newSheet.Cells[i, 7] = names.Category;
+                    newSheet.Cells[i, 8] = names.SubCategory;
 
-
-
-                            dataCopied = true;
-                        }
-
-                        int type = findUsedColumn(currentPosition, 1);
-                        if (type == sectionColumn)
-                        {
-                            section = (xlRange.Cells[currentPosition, sectionColumn + 8]).Value2;
-                        }
-                        else if (type == groupColumn)
-                        {
-                            group = (xlRange.Cells[currentPosition, groupColumn + 9]).Value2;
-                        }
-                        else if (type == categoryColumn)
-                        {
-                            category = (xlRange.Cells[currentPosition, categoryColumn + 10]).Value2;
-                        }
-                        else if (type == subCategoryColumn)
-                        {
-                            subCategory = (xlRange.Cells[currentPosition, subCategoryColumn + 11]).Value2;
-                        }
-
-                        nullCount++;
-                    }
-                    else
-                    {
-                        if (dataCopied) firstDataRow = currentPosition;
-                        nullCount = 0;
-                        dataCopied = false;
-
-                        if (state == State.Testing && newSheetPositionY > 100) break;
-                    }
-                    currentPosition++;
                 }
 
             }
@@ -409,6 +354,9 @@ namespace MF_XLS_Parser
             try
             {
                 int nullCount = 0;
+                bool dataCopied = false;
+                int startY = newSheetPositionY;
+
                 int currentPosition = startingRows[0];
                 int namesColumn = dataColumns[2];
                 int quantityColumn = dataColumns[3];
@@ -427,6 +375,14 @@ namespace MF_XLS_Parser
                 {
                     if (xlRange.Cells[currentPosition, namesColumn] == null || xlRange.Cells[currentPosition, namesColumn].Value2 == null)
                     {
+                        if (!dataCopied)
+                        {
+                            //Type copying
+                            namesQ.Enqueue(new NamesBlock(startY, newSheetPositionY - 1, section, group, category, subCategory));
+
+                            dataCopied = true;
+                        }
+
                         int type = findUsedColumn(currentPosition, 1);
                         if (type == sectionColumn)
                         {
@@ -449,9 +405,16 @@ namespace MF_XLS_Parser
                     }
                     else
                     {
+                        if (dataCopied) startY = newSheetPositionY;
+                        dataCopied = false;
                         nullCount = 0;
+                        
+
                         //Name copying.
                         newSheet.Cells[newSheetPositionY, newSheetPositionX] = (xlRange.Cells[currentPosition, namesColumn]).Value2;
+
+                        //Code copying.
+                        newSheet.Cells[newSheetPositionY, newSheetPositionX - 1] = (xlRange.Cells[currentPosition, dataColumns[0]]).Value2;
 
                         //Quantity copying.
                         newSheet.Cells[newSheetPositionY, newSheetPositionX + 1] = (xlRange.Cells[currentPosition, quantityColumn]).Value2.ToString();
@@ -460,14 +423,14 @@ namespace MF_XLS_Parser
                         newSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = (xlRange.Cells[currentPosition, quantityColumn + 2]).Value2.ToString();
 
                         //Type copying
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 3] = section;
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = group;
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 5] = category;
-                        newSheet.Cells[newSheetPositionY, newSheetPositionX + 6] = subCategory;
+                        //newSheet.Cells[newSheetPositionY, newSheetPositionX + 3] = section;
+                        //newSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = group;
+                        //newSheet.Cells[newSheetPositionY, newSheetPositionX + 5] = category;
+                        //newSheet.Cells[newSheetPositionY, newSheetPositionX + 6] = subCategory;
 
 
                         newSheetPositionY++;
-                        if (state == State.Testing && newSheetPositionY > 100) break;
+                        //if (state == State.Testing && newSheetPositionY > 100) break;
                     }
                     currentPosition++;
                 }
@@ -589,9 +552,7 @@ namespace MF_XLS_Parser
         {
             if (dataColumnsReady)
             {
-                int newSheetPositionX = 2;
-                int newSheetPositionY = 3;
-                startTransfer(newSheetPositionX, newSheetPositionY);
+
             }
             else
             {
@@ -622,7 +583,7 @@ namespace MF_XLS_Parser
                 int newSheetPositionY = 3;
                 startFullTransfer(newSheetPositionX, newSheetPositionY);
             }
-
+            threadsWorking = false;
         }
 
         /// <summary>
@@ -634,10 +595,19 @@ namespace MF_XLS_Parser
         {
             int newSheetPositionX = 2;
             int newSheetPositionY = 3;
+            NamesBlock names;
 
             try
             {
-                startFullTransfer(newSheetPositionX, newSheetPositionY, FilterBox.Text);
+                while(threadsWorking)
+                {
+                    if(namesQ.TryDequeue(out names))
+                    {
+                        startNamesCopy(names);
+                    }
+                }
+
+
             }
 
             //Error handling
@@ -659,7 +629,7 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void BackgroundWorker4_DoWork(object sender, DoWorkEventArgs e)
         {
-            int newSheetPositionX = 5;
+            int newSheetPositionX = 2;
             int newSheetPositionY = 3;
 
 
