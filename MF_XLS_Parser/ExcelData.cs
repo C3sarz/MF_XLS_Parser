@@ -61,9 +61,21 @@ namespace MF_XLS_Parser
             if(fileName is null)
             {
                 excelApp = new Excel.Application();
-                excelApp.Visible = true;
+                excelApp.Visible = false;
                 currentWorkbook = (Excel._Workbook)(excelApp.Workbooks.Add(Missing.Value));
                 currentSheet = (Excel._Worksheet)currentWorkbook.ActiveSheet;
+
+                //Sheet setup
+                currentSheet.Cells[1, 1] = "Codigo";
+                currentSheet.Cells[1, 2] = "Producto";
+                (currentSheet.Cells[1, 2] as Excel.Range).ColumnWidth = 45;
+                currentSheet.Cells[1, 3] = "Cantidad";
+                currentSheet.Cells[1, 4] = "Total";
+                currentSheet.Cells[1, 5] = "Sub-Categoria";
+                currentSheet.Cells[1, 6] = "Seccion";
+                currentSheet.Cells[1, 7] = "Grupo";
+                currentSheet.Cells[1, 8] = "Categoria";
+                currentSheet.Cells[1, 9] = "Sub-Categoria";
             }
             else
             {

@@ -22,6 +22,7 @@ using Microsoft.CSharp.RuntimeBinder;
 using Microsoft.Office.Interop.Excel;
 using System.Collections.Concurrent;
 using System.Windows.Forms.VisualStyles;
+using System.Diagnostics;
 
 namespace MF_XLS_Parser
 {
@@ -71,14 +72,19 @@ namespace MF_XLS_Parser
         private ConcurrentQueue<NamesBlock> namesQ = new ConcurrentQueue<NamesBlock>();
 
         /// <summary>
+        /// Determines if a file is loaded.
+        /// </summary>
+        public bool isFileLoaded { get; private set; } = false;
+
+        /// <summary>
         /// Stores the input file location.
         /// </summary>
         private string fileName;
 
         /// <summary>
-        /// String used for filtering.
+        /// Keeps track of the elapsed time.
         /// </summary>
-        string filterTerm;
+        private Stopwatch timer = new Stopwatch();
 
         /// <summary>
         /// States of the program.
@@ -99,6 +105,9 @@ namespace MF_XLS_Parser
         {
             InitializeComponent();
 
+            //Event Handlers
+            this.FormClosing += new FormClosingEventHandler(Closing);
+
             //Worker setup.
             backgroundWorker1.DoWork += BackgroundWorker1_DoWork;
             backgroundWorker2.DoWork += BackgroundWorker2_DoWork;
@@ -106,6 +115,8 @@ namespace MF_XLS_Parser
             backgroundWorker1.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
             backgroundWorker2.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
             backgroundWorker3.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
+            backgroundWorker2.ProgressChanged += Worker2_ProgressChanged;
+            backgroundWorker2.WorkerReportsProgress = true;
 
         }
 
@@ -122,6 +133,7 @@ namespace MF_XLS_Parser
                 OpenFileDialog openDialog = new OpenFileDialog();
                 if (openDialog.ShowDialog() == DialogResult.OK)
                 {
+                    if (isFileLoaded) Cleanup();
                     state = State.LoadingFile;
                     fileName = openDialog.FileName;
                     OpenFileButton.Enabled = false;
@@ -188,6 +200,8 @@ namespace MF_XLS_Parser
         private void Cleanup()
         {
             StartButton.Enabled = false;
+            TestButton.Enabled = false;
+            FilterStartButton.Enabled = false;
             try
             {
                 GC.Collect();
@@ -198,9 +212,8 @@ namespace MF_XLS_Parser
                 Marshal.ReleaseComObject(input.currentSheet);
                 input.currentWorkbook.Close();
                 Marshal.ReleaseComObject(input.currentWorkbook);
-                input.excelApp.Quit();
-                Marshal.ReleaseComObject(input.excelApp);
                 DataTextBox.Clear();
+                isFileLoaded = false;
             }
 
             catch (Exception ex)
@@ -224,17 +237,6 @@ namespace MF_XLS_Parser
                 LoadingImage.Visible = true;
                 output = new ExcelData(null);
 
-                //Sheet setup
-                output.currentSheet.Cells[1, 1] = "Codigo";
-                output.currentSheet.Cells[1, 2] = "Producto";
-                (output.currentSheet.Cells[1, 2] as Excel.Range).ColumnWidth = 45;
-                output.currentSheet.Cells[1, 3] = "Cantidad";
-                output.currentSheet.Cells[1, 4] = "Total";
-                output.currentSheet.Cells[1, 5] = "Seccion";
-                output.currentSheet.Cells[1, 6] = "Grupo";
-                output.currentSheet.Cells[1, 7] = "Categoria";
-                output.currentSheet.Cells[1, 8] = "Sub-Categoria";
-
                 //Launch worker threads.
                 activeThreads = 2;
                 workerThreadEnabled = true;
@@ -256,16 +258,6 @@ namespace MF_XLS_Parser
                 FilterStartButton.Enabled = false;
                 LoadingImage.Visible = true;
                 output = new ExcelData(null);
-                //Sheet setup
-                output.currentSheet.Cells[1, 1] = "Codigo";
-                output.currentSheet.Cells[1, 2] = "Producto";
-                (output.currentSheet.Cells[1, 2] as Excel.Range).ColumnWidth = 45;
-                output.currentSheet.Cells[1, 3] = "Cantidad";
-                output.currentSheet.Cells[1, 4] = "Total";
-                output.currentSheet.Cells[1, 5] = "Seccion";
-                output.currentSheet.Cells[1, 6] = "Grupo";
-                output.currentSheet.Cells[1, 7] = "Categoria";
-                output.currentSheet.Cells[1, 8] = "Sub-Categoria";
 
                 //Launch worker threads.
                 activeThreads = 2;
@@ -286,17 +278,6 @@ namespace MF_XLS_Parser
                 LoadingImage.Visible = true;
                 output = new ExcelData(null);
 
-                //Sheet setup
-                output.currentSheet.Cells[1, 1] = "Codigo";
-                output.currentSheet.Cells[1, 2] = "Producto";
-                (output.currentSheet.Cells[1, 2] as Excel.Range).ColumnWidth = 45;
-                output.currentSheet.Cells[1, 3] = "Cantidad";
-                output.currentSheet.Cells[1, 4] = "Total";
-                output.currentSheet.Cells[1, 5] = "Seccion";
-                output.currentSheet.Cells[1, 6] = "Grupo";
-                output.currentSheet.Cells[1, 7] = "Categoria";
-                output.currentSheet.Cells[1, 8] = "Sub-Categoria";
-
                 //Launch worker threads.
                 activeThreads = 2;
                 workerThreadEnabled = true;
@@ -313,10 +294,10 @@ namespace MF_XLS_Parser
                 // Iteration through cells.
                 for(int i = names.StartRow; i <= names.EndRow;i++)
                 {
-                    output.currentSheet.Cells[i, 5] = names.Section;
-                    output.currentSheet.Cells[i, 6] = names.Group;
-                    output.currentSheet.Cells[i, 7] = names.Category;
-                    output.currentSheet.Cells[i, 8] = names.SubCategory;
+                    output.currentSheet.Cells[i, 6] = names.Section;
+                    output.currentSheet.Cells[i, 7] = names.Group;
+                    output.currentSheet.Cells[i, 8] = names.Category;
+                    output.currentSheet.Cells[i, 9] = names.SubCategory;
                 }
             }
 
@@ -345,6 +326,10 @@ namespace MF_XLS_Parser
                 int nullCount = 0;
                 bool dataCopied = false;
                 int startY = newSheetPositionY;
+                int maxRows = input.fullRange.Rows.Count;
+                if (state == State.Testing) maxRows = 1000;
+                int count = 0;
+                
 
                 int currentPosition = startingRows[0];
                 int namesColumn = input.dataColumns[2];
@@ -396,19 +381,18 @@ namespace MF_XLS_Parser
                         if (dataCopied) startY = newSheetPositionY;
                         dataCopied = false;
                         nullCount = 0;
-                        
-
-                        //Name copying.
-                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX] = (input.fullRange.Cells[currentPosition, namesColumn]).Value2;
 
                         //Code copying.
-                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX - 1] = (input.fullRange.Cells[currentPosition, input.dataColumns[0]]).Value2;
+                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX] = (input.fullRange.Cells[currentPosition, input.dataColumns[0]]).Value2;
+
+                        //Name copying.
+                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 1] = (input.fullRange.Cells[currentPosition, namesColumn]).Value2;
 
                         //Quantity copying.
-                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 1] = (input.fullRange.Cells[currentPosition, quantityColumn]).Value2.ToString();
+                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = (input.fullRange.Cells[currentPosition, quantityColumn]).Value2.ToString();
 
                         //Total copying.
-                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = (input.fullRange.Cells[currentPosition, quantityColumn + 2]).Value2.ToString();
+                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 3] = (input.fullRange.Cells[currentPosition, quantityColumn + 2]).Value2.ToString();
 
                         //Type copying
                         //newSheet.Cells[newSheetPositionY, newSheetPositionX + 3] = section;
@@ -419,11 +403,24 @@ namespace MF_XLS_Parser
                         newSheetPositionY++;
                     }
                     currentPosition++;
+                    count++;
 
                     //Test case
-                    if (state == State.Testing
-                        && newSheetPositionY >= 300
-                        && nullCount > 0) workerThreadEnabled = false;
+                    if (state == State.Testing)
+                    {
+                        backgroundWorker2.ReportProgress(100 * newSheetPositionY / maxRows);
+                        if (newSheetPositionY >= 1000
+                        && nullCount > 0)
+                        {
+                            workerThreadEnabled = false;
+                        }
+                    }
+
+                    else if (count > 100)
+                    {
+                        backgroundWorker2.ReportProgress(100 * currentPosition / maxRows);
+                        count = 0;
+                    }
                 }
             }
 
@@ -446,12 +443,80 @@ namespace MF_XLS_Parser
         /// <param name="newSheetPositionX">Starting column cell in which the parsed data is copied.</param>
         /// <param name="newSheetPositionY">Starting row cell in which the parsed data is copied.</param>
         /// <param name="filterTerm">Filter term</param>
-        private void startFullTransfer(int newSheetPositionX, int newSheetPositionY, string filterTerm)
+        private void startFilteredTransfer(int newSheetPositionX, int newSheetPositionY)
         {
             try
             {
+                int nullCount = 0;
+                string name;
+                int maxRows = input.fullRange.Rows.Count;
+                int count = 0;
+                string fn = "";
+                OpenFileDialog openDialog = new OpenFileDialog();
+                if (openDialog.ShowDialog() == DialogResult.OK)
+                {
+                     fn = openDialog.FileName;
+                }
+                ExcelData namesFile = new ExcelData(fn);
+                List<string> list = new List<string>();
+                foreach (string s in )
 
+                int currentPosition = startingRows[0];
+                int namesColumn = input.dataColumns[2];
+                int quantityColumn = input.dataColumns[3];
+
+
+                // Iteration through cells.
+                while (nullCount < 10 && workerThreadEnabled)
+                {
+                    if (input.fullRange.Cells[currentPosition, namesColumn] == null || input.fullRange.Cells[currentPosition, namesColumn].Value2 == null)
+                    {
+                        nullCount++;
+                    }
+                    else
+                    {
+                            name = (input.fullRange.Cells[currentPosition, namesColumn]).Value2;
+                            nullCount = 0;
+                        if ()
+                        {
+
+                            //Code copying.
+                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX] = (input.fullRange.Cells[currentPosition, input.dataColumns[0]]).Value2;
+
+                            //Name copying.
+                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 1] = name;
+
+                            //Quantity copying.
+                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = (input.fullRange.Cells[currentPosition, quantityColumn]).Value2.ToString();
+
+                            //Total copying.
+                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 3] = (input.fullRange.Cells[currentPosition, quantityColumn + 2]).Value2.ToString();
+
+                            newSheetPositionY++;
+                        }
+                    }
+                    currentPosition++;
+                    count++;
+
+                    //Test case
+                    if (state == State.Testing)
+                    {
+                        backgroundWorker2.ReportProgress(100 * newSheetPositionY / maxRows);
+                        if (newSheetPositionY >= 1000
+                        && nullCount > 0)
+                        {
+                            workerThreadEnabled = false;
+                        }
+                    }
+
+                    else if (count > 100)
+                    {
+                        backgroundWorker2.ReportProgress(100 * currentPosition / maxRows);
+                        count = 0;
+                    }
+                }
             }
+
             //Error handling
             catch (Exception ex)
             {
@@ -464,7 +529,10 @@ namespace MF_XLS_Parser
             }
         }
 
+        //private char findUnitValue(string name, out int value)
+        //{
 
+        //}
 
 
         /// <summary>
@@ -484,15 +552,16 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
         {
+            timer.Start();
             if (state == State.FullProcessing || state == State.Testing)
             {
-                int newSheetPositionX = 2;
+                int newSheetPositionX = 1;
                 int newSheetPositionY = 3;
                 startFullTransfer(newSheetPositionX, newSheetPositionY);
             }
             else if (state == State.FilterProcessing)
             {
-                int newSheetPositionX = 2;
+                int newSheetPositionX = 1;
                 int newSheetPositionY = 3;
                 startFullTransfer(newSheetPositionX, newSheetPositionY, filterTerm);
             }
@@ -506,8 +575,6 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void BackgroundWorker3_DoWork(object sender, DoWorkEventArgs e)
         {
-            int newSheetPositionX = 2;
-            int newSheetPositionY = 3;
             NamesBlock names;
 
             try
@@ -534,6 +601,16 @@ namespace MF_XLS_Parser
         }
 
         /// <summary>
+        /// Updates the progress text.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Worker2_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            MainTextBox.Text = "Progreso: %" + e.ProgressPercentage;
+        }
+
+        /// <summary>
         /// Work completed event handler
         /// </summary>
         /// <param name="sender"></param>
@@ -542,6 +619,7 @@ namespace MF_XLS_Parser
         {
             if (state == State.LoadingFile)
             {
+                isFileLoaded = true;
                 AppLoadingImage.Visible = false;
                 StartButton.Enabled = true;
                 TestButton.Enabled = true;
@@ -554,7 +632,6 @@ namespace MF_XLS_Parser
 
             else
             {
-
                 activeThreads--;
                 if (activeThreads < 1)
                 {
@@ -564,7 +641,14 @@ namespace MF_XLS_Parser
                     LoadingImage.Visible = false;
                     input.dataColumnsReady = false;
                     input.typeColumnsReady = false;
-
+                    //Displays the total time it took to carry out the processing.
+                    if (timer.IsRunning)
+                    {
+                        timer.Stop();
+                        TimeSpan ts = timer.Elapsed;
+                        string totalTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
+                        MainTextBox.Text = "Tiempo total: " + totalTime;
+                    }
                     RowBox1.BackColor = Color.White;
                     RowBox2.BackColor = Color.White;
                     output.excelApp.Visible = true;
@@ -591,7 +675,8 @@ namespace MF_XLS_Parser
                 input.dataColumnsReady = true;
                 RowBox1.BackColor = Color.LightGreen;
                 input.typeColumnsReady = true;
-                RowBox2.BackColor = Color.LightGreen;
+                RowBox2.BackColor = Color.LightGreen;                
+                MainTextBox.Text = input.fullRange.Rows.Count.ToString();
             }
             catch (Exception ex)
             {
@@ -603,5 +688,14 @@ namespace MF_XLS_Parser
             }
         }
 
+        /// <summary>
+        /// Actions to be carried out when the program is closing.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if(isFileLoaded)Cleanup();
+        }
     }
 }
