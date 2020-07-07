@@ -82,6 +82,11 @@ namespace MF_XLS_Parser
         private string fileName;
 
         /// <summary>
+        /// Hash set of the product codes.
+        /// </summary>
+        public HashSet<int> codesList { get; private set; }
+
+        /// <summary>
         /// Keeps track of the elapsed time.
         /// </summary>
         private Stopwatch timer = new Stopwatch();
@@ -142,7 +147,7 @@ namespace MF_XLS_Parser
                     backgroundWorker1.RunWorkerAsync();
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 MessageBox.Show("Error cargando el archivo, verifique el formato.");
             }
@@ -248,7 +253,7 @@ namespace MF_XLS_Parser
 
         private void FilterStartButton_Click(object sender, EventArgs e)
         {
-            if (input.dataColumnsReady 
+            if (input.dataColumnsReady
                 && input.typeColumnsReady
                 && FilterBox.Text != "")
             {
@@ -292,7 +297,7 @@ namespace MF_XLS_Parser
             try
             {
                 // Iteration through cells.
-                for(int i = names.StartRow; i <= names.EndRow;i++)
+                for (int i = names.StartRow; i <= names.EndRow; i++)
                 {
                     output.currentSheet.Cells[i, 6] = names.Section;
                     output.currentSheet.Cells[i, 7] = names.Group;
@@ -329,7 +334,7 @@ namespace MF_XLS_Parser
                 int maxRows = input.fullRange.Rows.Count;
                 if (state == State.Testing) maxRows = 1000;
                 int count = 0;
-                
+
 
                 int currentPosition = startingRows[0];
                 int namesColumn = input.dataColumns[2];
@@ -443,27 +448,26 @@ namespace MF_XLS_Parser
         /// <param name="newSheetPositionX">Starting column cell in which the parsed data is copied.</param>
         /// <param name="newSheetPositionY">Starting row cell in which the parsed data is copied.</param>
         /// <param name="filterTerm">Filter term</param>
-        private void startFilteredTransfer(int newSheetPositionX, int newSheetPositionY)
+        private void startFiltering(int newSheetPositionX, int newSheetPositionY, HashSet<int> codesList)
         {
             try
             {
                 int nullCount = 0;
-                string name;
                 int maxRows = input.fullRange.Rows.Count;
+                if (state == State.Testing) maxRows = 1000;
                 int count = 0;
-                string fn = "";
-                OpenFileDialog openDialog = new OpenFileDialog();
-                if (openDialog.ShowDialog() == DialogResult.OK)
-                {
-                     fn = openDialog.FileName;
-                }
-                ExcelData namesFile = new ExcelData(fn);
-                List<string> list = new List<string>();
-                foreach (string s in )
 
                 int currentPosition = startingRows[0];
                 int namesColumn = input.dataColumns[2];
                 int quantityColumn = input.dataColumns[3];
+                int sectionColumn = input.typeColumns[0];
+                int groupColumn = input.typeColumns[0] + 1;
+                int categoryColumn = input.typeColumns[0] + 2;
+                int subCategoryColumn = input.typeColumns[0] + 3;
+                string section = input.fullRange.Cells[startingRows[1], input.typeColumns[1]].Value2;
+                string group = input.fullRange.Cells[startingRows[1] + 1, input.typeColumns[1] + 2].Value2;
+                string category = input.fullRange.Cells[startingRows[1] + 2, input.typeColumns[1] + 4].Value2;
+                string subCategory = input.fullRange.Cells[startingRows[1] + 3, input.typeColumns[1] + 6].Value2;
 
 
                 // Iteration through cells.
@@ -471,26 +475,52 @@ namespace MF_XLS_Parser
                 {
                     if (input.fullRange.Cells[currentPosition, namesColumn] == null || input.fullRange.Cells[currentPosition, namesColumn].Value2 == null)
                     {
+
+
+                        int type = input.findUsedColumn(currentPosition, 1);
+                        if (type == sectionColumn)
+                        {
+                            section = (input.fullRange.Cells[currentPosition, sectionColumn + 8]).Value2;
+                        }
+                        else if (type == groupColumn)
+                        {
+                            group = (input.fullRange.Cells[currentPosition, groupColumn + 9]).Value2;
+                        }
+                        else if (type == categoryColumn)
+                        {
+                            category = (input.fullRange.Cells[currentPosition, categoryColumn + 10]).Value2;
+                        }
+                        else if (type == subCategoryColumn)
+                        {
+                            subCategory = (input.fullRange.Cells[currentPosition, subCategoryColumn + 11]).Value2;
+                        }
                         nullCount++;
                     }
                     else
                     {
-                            name = (input.fullRange.Cells[currentPosition, namesColumn]).Value2;
-                            nullCount = 0;
-                        if ()
-                        {
+                        nullCount = 0;
+                        int code = Int32.Parse((input.fullRange.Cells[currentPosition, input.dataColumns[0]]).Value2);
+                        if (codesList.Contains(code)) {
 
                             //Code copying.
-                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX] = (input.fullRange.Cells[currentPosition, input.dataColumns[0]]).Value2;
+                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX] = code.ToString();
 
                             //Name copying.
-                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 1] = name;
+                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 1] = (input.fullRange.Cells[currentPosition, namesColumn]).Value2;
 
                             //Quantity copying.
                             output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = (input.fullRange.Cells[currentPosition, quantityColumn]).Value2.ToString();
 
                             //Total copying.
                             output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 3] = (input.fullRange.Cells[currentPosition, quantityColumn + 2]).Value2.ToString();
+
+                            //Unit Price copying.
+
+                            //Type copying.
+                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 5] = section;
+                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 6] = group;
+                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 7] = category;
+                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 8] = subCategory;
 
                             newSheetPositionY++;
                         }
@@ -542,7 +572,7 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
-            input = new ExcelData(fileName);
+            if (state == State.LoadingFile) input = new ExcelData(fileName);
         }
 
         /// <summary>
@@ -552,6 +582,7 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
         {
+            //In case the normal search button is pressed.
             timer.Start();
             if (state == State.FullProcessing || state == State.Testing)
             {
@@ -559,11 +590,37 @@ namespace MF_XLS_Parser
                 int newSheetPositionY = 3;
                 startFullTransfer(newSheetPositionX, newSheetPositionY);
             }
+
+            //In case the filter search button is pressed.
             else if (state == State.FilterProcessing)
             {
+                //Initial data setup.
                 int newSheetPositionX = 1;
                 int newSheetPositionY = 3;
-                startFullTransfer(newSheetPositionX, newSheetPositionY, filterTerm);
+                codesList = new HashSet<int>();
+                OpenFileDialog openDialog = new OpenFileDialog();
+
+                try
+                {
+                    //Read file from dialog.
+                    if (openDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        StreamReader sr = new StreamReader(openDialog.FileName);
+                        string line;
+                        while ((line = sr.ReadLine()) != null)
+                        {
+                            codesList.Add(Int32.Parse(line));
+                        }
+                        sr.Close();
+                    }
+                }
+
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error cargando el archivo, verifique el formato.");
+                }
+                //Start data filtering
+                startFiltering(newSheetPositionX, newSheetPositionY, codesList);
             }
             workerThreadEnabled = false;
         }
@@ -579,9 +636,9 @@ namespace MF_XLS_Parser
 
             try
             {
-                while(workerThreadEnabled || namesQ.Count > 0)
+                while (workerThreadEnabled || namesQ.Count > 0)
                 {
-                    if(namesQ.TryDequeue(out names))
+                    if (namesQ.TryDequeue(out names))
                     {
                         startNamesCopy(names);
                     }
@@ -656,7 +713,7 @@ namespace MF_XLS_Parser
                     state = State.Idle;
                     MessageBox.Show("Proceso completado");
                 }
-            }            
+            }
         }
 
         /// <summary>
@@ -675,7 +732,7 @@ namespace MF_XLS_Parser
                 input.dataColumnsReady = true;
                 RowBox1.BackColor = Color.LightGreen;
                 input.typeColumnsReady = true;
-                RowBox2.BackColor = Color.LightGreen;                
+                RowBox2.BackColor = Color.LightGreen;
                 MainTextBox.Text = input.fullRange.Rows.Count.ToString();
             }
             catch (Exception ex)
@@ -695,7 +752,7 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            if(isFileLoaded)Cleanup();
+            if (isFileLoaded) Cleanup();
         }
     }
 }
