@@ -539,14 +539,24 @@ namespace MF_XLS_Parser
 
                             /////////////////////////////////////////
                             int value;
-                            findUnitValue(name, out value);
-                            if (value == 2)
+                            char unit = findUnitValue(name, out value);
+                            switch(unit)
                             {
-                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "KGX";
-                            }
-                            else if (value == 1)
-                            {
-                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "EITHER";
+                                case 'u':
+
+                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "UNIDAD" + value;
+                                    break;
+
+                                case 'k':
+                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "KG" + value;
+                                    break;
+                                case 'n':
+                                    output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "n";
+                                    (output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] as Excel.Range).Interior.Color = Color.Orange;
+                                    break;
+                                default:
+                                    (output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] as Excel.Range).Interior.Color = Color.Red;
+                                    break;
                             }
 
 
@@ -613,10 +623,6 @@ namespace MF_XLS_Parser
                 {
                     specialCase = 1; // "UNIDADES" case
                 }
-                else if (name.Contains("UND"))
-                {
-                    specialCase = 2; // "UND" case
-                }
                 else if (name.Contains("UNIDAD"))
                 {
                     specialCase = 3; // "UNIDAD" case
@@ -649,9 +655,16 @@ namespace MF_XLS_Parser
 
                 else if (specialCase == 1 && Int32.TryParse(word, out value))
                 {
-                    return 'u';
-
+                    return 'p';
                 }
+
+                else if(word.Contains("UND"))
+                {
+                    //Get rid of UND to get amount.
+                    string temp = word.Replace("UND", "");
+                    if (Int32.TryParse(temp, out value)) return 'u';                
+                }
+
                 else if(word.Contains("UNIDAD"))
                 {
                     if (word.Equals("UNIDAD"))
@@ -659,9 +672,14 @@ namespace MF_XLS_Parser
                         value = 1;
                         return 'u';
                     }
+                    else
+                    {
+                        string temp = word.Replace("UNIDAD", "");
+                        if (Int32.TryParse(temp, out value)) return 'u';
+                    }
                 }
 
-            }
+            }   //end foreach loop
             return 'n';
         }
 
