@@ -519,13 +519,15 @@ namespace MF_XLS_Parser
                     {
                         nullCount = 0;
                         long code = Int64.Parse((input.fullRange.Cells[currentPosition, input.dataColumns[0]]).Value2);
-                        if (codesList.Contains(code)) {
+                        if (codesList.Contains(code))
+                        {
 
                             //Code copying.
                             output.currentSheet.Cells[newSheetPositionY, newSheetPositionX] = code.ToString();
 
                             //Name copying.
-                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 1] = (input.fullRange.Cells[currentPosition, namesColumn]).Value2;
+                            string name = (input.fullRange.Cells[currentPosition, namesColumn]).Value2;
+                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 1] = name;
 
                             //Quantity copying.
                             output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = (input.fullRange.Cells[currentPosition, quantityColumn]).Value2.ToString();
@@ -535,6 +537,21 @@ namespace MF_XLS_Parser
 
                             //Unit Price copying.
 
+                            /////////////////////////////////////////
+                            int value;
+                            findUnitValue(name, out value);
+                            if (value == 2)
+                            {
+                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "KGX";
+                            }
+                            else if (value == 1)
+                            {
+                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "EITHER";
+                            }
+
+
+
+                            /////////////////////////////////////////
                             //Type copying.
                             output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 5] = section;
                             output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 6] = group;
@@ -578,10 +595,75 @@ namespace MF_XLS_Parser
             }
         }
 
-        //private char findUnitValue(string name, out int value)
-        //{
+        private char findUnitValue(string name, out int value)
+        {
+            value = 0; //debug
+            name.ToUpper();
+            int specialCase = -1;
 
-        //}
+            //Pre-tokenizing searches
+            if (name.Contains("KILO"))
+            {
+                value = 1;
+                return 'k';
+            }
+            else if (name.Contains("PAQ"))
+            {
+                if (name.Contains("UNIDADES"))
+                {
+                    specialCase = 1; // "UNIDADES" case
+                }
+                else if (name.Contains("UND"))
+                {
+                    specialCase = 2; // "UND" case
+                }
+                else if (name.Contains("UNIDAD"))
+                {
+                    specialCase = 3; // "UNIDAD" case
+                }
+                else
+                {
+
+                }
+            }
+
+            //String tokenizing
+            string[] words = name.Split(new char[] { ' ', '.', 'X' });
+            foreach (string word in words)
+            {
+                if (word.Contains("KG"))
+                {
+                    //Get value
+                    if (word.Equals("KG"))
+                    {
+                        value = 1;
+                        return 'k';
+                    }
+                    else
+                    {
+
+                        //Specific KG code
+
+                    }
+                }
+
+                else if (specialCase == 1 && Int32.TryParse(word, out value))
+                {
+                    return 'u';
+
+                }
+                else if(word.Contains("UNIDAD"))
+                {
+                    if (word.Equals("UNIDAD"))
+                    {
+                        value = 1;
+                        return 'u';
+                    }
+                }
+
+            }
+            return 'n';
+        }
 
 
         /// <summary>

@@ -58,6 +58,7 @@ namespace MF_XLS_Parser
 
         public ExcelData(string fileName)
         {
+            //New workbook creation.
             if(fileName is null)
             {
                 excelApp = new Excel.Application();
@@ -71,12 +72,14 @@ namespace MF_XLS_Parser
                 (currentSheet.Cells[1, 2] as Excel.Range).ColumnWidth = 45;
                 currentSheet.Cells[1, 3] = "Cantidad";
                 currentSheet.Cells[1, 4] = "Total";
-                currentSheet.Cells[1, 5] = "Sub-Categoria";
+                currentSheet.Cells[1, 5] = "Precio Unitario";
+                (currentSheet.Cells[1, 5] as Excel.Range).ColumnWidth = 13;
                 currentSheet.Cells[1, 6] = "Seccion";
                 currentSheet.Cells[1, 7] = "Grupo";
                 currentSheet.Cells[1, 8] = "Categoria";
                 currentSheet.Cells[1, 9] = "Sub-Categoria";
             }
+            //Existing workbook loading.
             else
             {
                 excelApp = new Excel.Application();
