@@ -84,7 +84,7 @@ namespace MF_XLS_Parser
         /// <summary>
         /// Hash set of the product codes.
         /// </summary>
-        public HashSet<int> codesList { get; private set; }
+        public HashSet<long> codesList { get; private set; }
 
         /// <summary>
         /// Keeps track of the elapsed time.
@@ -142,7 +142,7 @@ namespace MF_XLS_Parser
                     state = State.LoadingFile;
                     fileName = openDialog.FileName;
                     OpenFileButton.Enabled = false;
-                    DataTextBox.Text = openDialog.FileName;
+                    DataTextBox.Text = "Archivo cargado:\n" + openDialog.FileName;
                     AppLoadingImage.Visible = true;
                     backgroundWorker1.RunWorkerAsync();
                 }
@@ -254,8 +254,7 @@ namespace MF_XLS_Parser
         private void FilterStartButton_Click(object sender, EventArgs e)
         {
             if (input.dataColumnsReady
-                && input.typeColumnsReady
-                && FilterBox.Text != "")
+                && input.typeColumnsReady)
             {
                 state = State.FilterProcessing;
                 //Workbook
@@ -264,11 +263,31 @@ namespace MF_XLS_Parser
                 LoadingImage.Visible = true;
                 output = new ExcelData(null);
 
+                try
+                {
+                    //Read file from dialog.
+                    codesList = new HashSet<long>();
+                    OpenFileDialog openDialog = new OpenFileDialog();
+                    if (openDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        StreamReader sr = new StreamReader(openDialog.FileName);
+                        string line;
+                        while ((line = sr.ReadLine()) != null)
+                        {
+                            codesList.Add(Int64.Parse(line));
+                        }
+                        sr.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error cargando el archivo, verifique el formato.");
+                }
+
                 //Launch worker threads.
-                activeThreads = 2;
-                workerThreadEnabled = true;
+                activeThreads = 1;
+                workerThreadEnabled = false;
                 backgroundWorker2.RunWorkerAsync();
-                backgroundWorker3.RunWorkerAsync();
             }
             else MessageBox.Show("Por favor confimar fila y filtro");
         }
@@ -448,7 +467,7 @@ namespace MF_XLS_Parser
         /// <param name="newSheetPositionX">Starting column cell in which the parsed data is copied.</param>
         /// <param name="newSheetPositionY">Starting row cell in which the parsed data is copied.</param>
         /// <param name="filterTerm">Filter term</param>
-        private void startFiltering(int newSheetPositionX, int newSheetPositionY, HashSet<int> codesList)
+        private void startFiltering(int newSheetPositionX, int newSheetPositionY, HashSet<long> codesList)
         {
             try
             {
@@ -471,7 +490,7 @@ namespace MF_XLS_Parser
 
 
                 // Iteration through cells.
-                while (nullCount < 10 && workerThreadEnabled)
+                while (nullCount < 10)
                 {
                     if (input.fullRange.Cells[currentPosition, namesColumn] == null || input.fullRange.Cells[currentPosition, namesColumn].Value2 == null)
                     {
@@ -499,7 +518,7 @@ namespace MF_XLS_Parser
                     else
                     {
                         nullCount = 0;
-                        int code = Int32.Parse((input.fullRange.Cells[currentPosition, input.dataColumns[0]]).Value2);
+                        long code = Int64.Parse((input.fullRange.Cells[currentPosition, input.dataColumns[0]]).Value2);
                         if (codesList.Contains(code)) {
 
                             //Code copying.
@@ -597,29 +616,8 @@ namespace MF_XLS_Parser
                 //Initial data setup.
                 int newSheetPositionX = 1;
                 int newSheetPositionY = 3;
-                codesList = new HashSet<int>();
-                OpenFileDialog openDialog = new OpenFileDialog();
 
-                try
-                {
-                    //Read file from dialog.
-                    if (openDialog.ShowDialog() == DialogResult.OK)
-                    {
-                        StreamReader sr = new StreamReader(openDialog.FileName);
-                        string line;
-                        while ((line = sr.ReadLine()) != null)
-                        {
-                            codesList.Add(Int32.Parse(line));
-                        }
-                        sr.Close();
-                    }
-                }
-
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Error cargando el archivo, verifique el formato.");
-                }
-                //Start data filtering
+                //Start data filtering.
                 startFiltering(newSheetPositionX, newSheetPositionY, codesList);
             }
             workerThreadEnabled = false;

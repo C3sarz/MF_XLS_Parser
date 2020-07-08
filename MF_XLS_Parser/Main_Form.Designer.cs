@@ -42,7 +42,6 @@
             this.RowBox1 = new System.Windows.Forms.TextBox();
             this.AppLoadingImage = new System.Windows.Forms.PictureBox();
             this.FilterStartButton = new System.Windows.Forms.Button();
-            this.FilterBox = new System.Windows.Forms.TextBox();
             this.TestButton = new System.Windows.Forms.Button();
             this.RowBox2 = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.LoadingImage)).BeginInit();
@@ -188,13 +187,6 @@
             this.FilterStartButton.UseVisualStyleBackColor = true;
             this.FilterStartButton.Click += new System.EventHandler(this.FilterStartButton_Click);
             // 
-            // FilterBox
-            // 
-            this.FilterBox.Location = new System.Drawing.Point(211, 339);
-            this.FilterBox.Name = "FilterBox";
-            this.FilterBox.Size = new System.Drawing.Size(142, 20);
-            this.FilterBox.TabIndex = 16;
-            // 
             // TestButton
             // 
             this.TestButton.Enabled = false;
@@ -221,7 +213,6 @@
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Controls.Add(this.RowBox2);
             this.Controls.Add(this.TestButton);
-            this.Controls.Add(this.FilterBox);
             this.Controls.Add(this.FilterStartButton);
             this.Controls.Add(this.AppLoadingImage);
             this.Controls.Add(this.RowBox1);
@@ -261,7 +252,6 @@
         private System.Windows.Forms.TextBox RowBox1;
         private System.Windows.Forms.PictureBox AppLoadingImage;
         private System.Windows.Forms.Button FilterStartButton;
-        private System.Windows.Forms.TextBox FilterBox;
         private System.Windows.Forms.Button TestButton;
         private System.Windows.Forms.TextBox RowBox2;
     }
