@@ -60,11 +60,11 @@
             // 
             // MainTextBox
             // 
-            this.MainTextBox.Location = new System.Drawing.Point(63, 21);
+            this.MainTextBox.Location = new System.Drawing.Point(211, 129);
             this.MainTextBox.Multiline = true;
             this.MainTextBox.Name = "MainTextBox";
             this.MainTextBox.ReadOnly = true;
-            this.MainTextBox.Size = new System.Drawing.Size(438, 77);
+            this.MainTextBox.Size = new System.Drawing.Size(142, 31);
             this.MainTextBox.TabIndex = 1;
             // 
             // DataTextBox
@@ -72,6 +72,7 @@
             this.DataTextBox.Location = new System.Drawing.Point(546, 21);
             this.DataTextBox.Multiline = true;
             this.DataTextBox.Name = "DataTextBox";
+            this.DataTextBox.ReadOnly = true;
             this.DataTextBox.Size = new System.Drawing.Size(202, 77);
             this.DataTextBox.TabIndex = 2;
             // 

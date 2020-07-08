@@ -142,7 +142,7 @@ namespace MF_XLS_Parser
                     state = State.LoadingFile;
                     fileName = openDialog.FileName;
                     OpenFileButton.Enabled = false;
-                    DataTextBox.Text = "Archivo cargado:\n" + openDialog.FileName;
+                    DataTextBox.Text = "Archivo cargado: \n\n" + openDialog.FileName;
                     AppLoadingImage.Visible = true;
                     backgroundWorker1.RunWorkerAsync();
                 }
