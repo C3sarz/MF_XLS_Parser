@@ -23,6 +23,7 @@ using Microsoft.Office.Interop.Excel;
 using System.Collections.Concurrent;
 using System.Windows.Forms.VisualStyles;
 using System.Diagnostics;
+using System.CodeDom;
 
 namespace MF_XLS_Parser
 {
@@ -475,9 +476,7 @@ namespace MF_XLS_Parser
                 int maxRows = input.fullRange.Rows.Count;
                 if (state == State.Testing) maxRows = 1000;
                 int count = 0;
-                int quantity;
-                int total;
-                int lastCode;
+                Dictionary<long, DataBlock> contents = new Dictionary<long, DataBlock>();
 
 
                 int currentPosition = startingRows[0];
@@ -523,59 +522,90 @@ namespace MF_XLS_Parser
                     {
                         nullCount = 0;
                         long code = Int64.Parse((input.fullRange.Cells[currentPosition, input.dataColumns[0]]).Value2);
+
                         if (codesList.Contains(code))
                         {
+                            //Create DataBlock to store data.
+                            DataBlock block;
 
-                            //Code copying.
-                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX] = code.ToString();
-
-                            //Name copying.
-                            string name = (input.fullRange.Cells[currentPosition, namesColumn]).Value2;
-                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 1] = name;
-
-                            //Quantity copying.
-                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = (input.fullRange.Cells[currentPosition, quantityColumn]).Value2.ToString();
-
-                            //Total copying.
-                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 3] = (input.fullRange.Cells[currentPosition, quantityColumn + 2]).Value2.ToString();
-
-                            //Unit Price copying.
-
-                            /////////////////////////////////////////
-                            double value;
-                            char unit = findUnitValue(name, out value);
-                            switch(unit)
+                            if (!contents.TryGetValue(code, out block))
                             {
-                                case 'u':
+                                //Code copying.
+                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX] = code.ToString();
 
-                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "UNIDAD" + value;
-                                    break;
+                                //Name copying.
+                                string name = (input.fullRange.Cells[currentPosition, namesColumn]).Value2;
+                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 1] = name;
 
-                                case 'k':
-                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "KG" + value;
-                                    break;
-                                case 'l':
-                                    output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "L" + value;
-                                    break;
-                                case 'n':
-                                    output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "n";
-                                    (output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] as Excel.Range).Interior.Color = Color.Orange;
-                                    break;
-                                default:
-                                    (output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] as Excel.Range).Interior.Color = Color.Red;
-                                    break;
+                                //Quantity copying.
+                                double quantity = (input.fullRange.Cells[currentPosition, quantityColumn]).Value2;
+                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = quantity.ToString();
+
+                                //Total copying.
+                                double total = (input.fullRange.Cells[currentPosition, quantityColumn + 2]).Value2;
+                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 3] = total.ToString();
+
+                                //Save in DataBlock
+
+                                contents.Add(code, new DataBlock(name, code, quantity, total, newSheetPositionY));
+
+                                //Unit Price copying.
+
+                                /////////////////////////////////////////
+                                double value;
+                                char unit = findUnitValue(name, out value);
+                                switch (unit)
+                                {
+                                    case 'u':
+
+                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "UNIDAD" + value;
+                                        break;
+
+                                    case 'k':
+                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "KG" + value;
+                                        break;
+                                    case 'l':
+                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "L" + value;
+                                        break;
+                                    case 'n':
+                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "n";
+                                        (output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] as Excel.Range).Interior.Color = Color.Orange;
+                                        break;
+                                    default:
+                                        (output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] as Excel.Range).Interior.Color = Color.Red;
+                                        break;
+                                }
+
+
+
+                                /////////////////////////////////////////
+                                //Type copying.
+                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 5] = section;
+                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 6] = group;
+                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 7] = category;
+                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 8] = subCategory;
+
+                                newSheetPositionY++;
                             }
+                            else
+                            {
+                                ///Modify existing cells to add data of duplicate cells;
 
+                                //Quantity copying and saving in temp block.
+                                double quantity = (input.fullRange.Cells[currentPosition, quantityColumn]).Value2 + block.Quantity;
+                                block.Quantity = quantity;
+                                output.currentSheet.Cells[block.DataRow, newSheetPositionX + 2] = quantity.ToString();
 
+                                //Total copying and saving in temp block.
+                                double total = (input.fullRange.Cells[currentPosition, quantityColumn + 2]).Value2 + block.Total;
+                                block.Total = total;
+                                output.currentSheet.Cells[block.DataRow, newSheetPositionX + 3] = total.ToString();
 
-                            /////////////////////////////////////////
-                            //Type copying.
-                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 5] = section;
-                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 6] = group;
-                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 7] = category;
-                            output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 8] = subCategory;
+                                //Replace old DataBlock with the new one (update values).
+                                contents.Remove(code);
+                                contents.Add(code, block);
 
-                            newSheetPositionY++;
+                            }
                         }
                     }
                     currentPosition++;
@@ -596,6 +626,13 @@ namespace MF_XLS_Parser
                     {
                         backgroundWorker2.ReportProgress(100 * currentPosition / maxRows);
                         count = 0;
+                    }
+                }
+                foreach(int code in contents.Keys)
+                {
+                    if (codesList.Contains(code))
+                    {
+                        codesList.Remove(code);
                     }
                 }
             }
@@ -889,7 +926,18 @@ namespace MF_XLS_Parser
                     RowBox1.BackColor = Color.White;
                     RowBox2.BackColor = Color.White;
                     output.excelApp.Visible = true;
-                    //Cleanup();
+
+                    // debug
+                    StringBuilder sb = new StringBuilder();
+                    foreach (long missingCode in codesList.ToArray())
+                    {
+                        sb.Append("-");
+                        sb.Append(missingCode.ToString());
+                        sb.Append("\r\n");
+                    }
+                    ListBox.Text = sb.ToString();
+                    //
+
                     state = State.Idle;
                     MessageBox.Show("Proceso completado");
                 }
