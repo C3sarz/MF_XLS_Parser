@@ -475,6 +475,10 @@ namespace MF_XLS_Parser
                 int maxRows = input.fullRange.Rows.Count;
                 if (state == State.Testing) maxRows = 1000;
                 int count = 0;
+                int quantity;
+                int total;
+                int lastCode;
+
 
                 int currentPosition = startingRows[0];
                 int namesColumn = input.dataColumns[2];
@@ -538,7 +542,7 @@ namespace MF_XLS_Parser
                             //Unit Price copying.
 
                             /////////////////////////////////////////
-                            int value;
+                            double value;
                             char unit = findUnitValue(name, out value);
                             switch(unit)
                             {
@@ -549,6 +553,9 @@ namespace MF_XLS_Parser
 
                                 case 'k':
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "KG" + value;
+                                    break;
+                                case 'l':
+                                    output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "L" + value;
                                     break;
                                 case 'n':
                                     output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "n";
@@ -605,7 +612,7 @@ namespace MF_XLS_Parser
             }
         }
 
-        private char findUnitValue(string name, out int value)
+        private char findUnitValue(string name, out double value)
         {
             value = 0; //debug
             name.ToUpper();
@@ -617,8 +624,9 @@ namespace MF_XLS_Parser
                 value = 1;
                 return 'k';
             }
-            else if (name.Contains("PAQ"))
+            else if (name.Contains("PAQ") || name.Contains("PACK"))
             {
+
                 if (name.Contains("UNIDADES"))
                 {
                     specialCase = 1; // "UNIDADES" case
@@ -634,7 +642,7 @@ namespace MF_XLS_Parser
             }
 
             //String tokenizing
-            string[] words = name.Split(new char[] { ' ', '.', 'X' });
+            string[] words = name.Split(new char[] { ' ', '.', 'X', ',' });
             foreach (string word in words)
             {
                 if (word.Contains("KG"))
@@ -649,12 +657,12 @@ namespace MF_XLS_Parser
                     {
 
                         string temp = word.Replace("KG", "");
-                        if (Int32.TryParse(temp, out value)) return 'k';
+                        if (Double.TryParse(temp, out value)) return 'k';
 
                     }
                 }
 
-                else if (specialCase == 1 && Int32.TryParse(word, out value))
+                else if (specialCase == 1 && Double.TryParse(word, out value))
                 {
                     return 'p';
                 }
@@ -663,13 +671,13 @@ namespace MF_XLS_Parser
                 {
                     //Get rid of UND to get amount.
                     string temp = word.Replace("UND", "");
-                    if (Int32.TryParse(temp, out value)) return 'u';                
+                    if (Double.TryParse(temp, out value)) return 'u';                
                 }
 
                 else if (word.Contains("GR"))
                 {
                     string temp = word.Replace("GR", "");
-                    if (Int32.TryParse(temp, out value))
+                    if (Double.TryParse(temp, out value))
                     {
                         value = value / 1000;
                         return 'k';
@@ -686,14 +694,14 @@ namespace MF_XLS_Parser
                     else
                     {
                         string temp = word.Replace("UNIDAD", "");
-                        if (Int32.TryParse(temp, out value)) return 'u';
+                        if (Double.TryParse(temp, out value)) return 'u';
                     }
                 }
 
                 else if (word.Contains("UN"))
                 {
                     string temp = word.Replace("UN", "");
-                    if (Int32.TryParse(temp, out value))
+                    if (Double.TryParse(temp, out value))
                     {
                         return 'u';
                     }
@@ -702,10 +710,54 @@ namespace MF_XLS_Parser
                 else if (word.Contains("ML"))
                 {
                     string temp = word.Replace("ML", "");
-                    if (Int32.TryParse(temp, out value))
+                    if (Double.TryParse(temp, out value))
                     {
                         value = value / 1000;
                         return 'l';
+                    }
+                }
+
+                else if (word.Contains("CC"))
+                {
+                    string temp = word.Replace("CC", "");
+                    if (Double.TryParse(temp, out value))
+                    {
+                        value = value / 1000;
+                        return 'l';
+                    }
+                }
+
+                else if (word.Contains("L"))
+                {
+                    //Get value
+                    if (word.Equals("L"))
+                    {
+                        value = 1;
+                        return 'l';
+                    }
+                    else
+                    {
+
+                        string temp = word.Replace("L", "");
+                        if (Double.TryParse(temp, out value)) return 'l';
+
+                    }
+                }
+
+                else if (word.Contains("K"))
+                {
+                    //Get value
+                    if (word.Equals("K"))
+                    {
+                        value = 1;
+                        return 'l';
+                    }
+                    else
+                    {
+
+                        string temp = word.Replace("L", "");
+                        if (Double.TryParse(temp, out value)) return 'l';
+
                     }
                 }
 
