@@ -648,7 +648,8 @@ namespace MF_XLS_Parser
                     else
                     {
 
-                        //Specific KG code
+                        string temp = word.Replace("KG", "");
+                        if (Int32.TryParse(temp, out value)) return 'k';
 
                     }
                 }
@@ -665,6 +666,16 @@ namespace MF_XLS_Parser
                     if (Int32.TryParse(temp, out value)) return 'u';                
                 }
 
+                else if (word.Contains("GR"))
+                {
+                    string temp = word.Replace("GR", "");
+                    if (Int32.TryParse(temp, out value))
+                    {
+                        value = value / 1000;
+                        return 'k';
+                    }
+                }
+
                 else if(word.Contains("UNIDAD"))
                 {
                     if (word.Equals("UNIDAD"))
@@ -676,6 +687,25 @@ namespace MF_XLS_Parser
                     {
                         string temp = word.Replace("UNIDAD", "");
                         if (Int32.TryParse(temp, out value)) return 'u';
+                    }
+                }
+
+                else if (word.Contains("UN"))
+                {
+                    string temp = word.Replace("UN", "");
+                    if (Int32.TryParse(temp, out value))
+                    {
+                        return 'u';
+                    }
+                }
+
+                else if (word.Contains("ML"))
+                {
+                    string temp = word.Replace("ML", "");
+                    if (Int32.TryParse(temp, out value))
+                    {
+                        value = value / 1000;
+                        return 'l';
                     }
                 }
 
