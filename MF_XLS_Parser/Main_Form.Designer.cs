@@ -53,7 +53,7 @@
             // OpenFileButton
             // 
             this.OpenFileButton.Location = new System.Drawing.Point(84, 146);
-            this.OpenFileButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.OpenFileButton.Margin = new System.Windows.Forms.Padding(4);
             this.OpenFileButton.Name = "OpenFileButton";
             this.OpenFileButton.Size = new System.Drawing.Size(189, 64);
             this.OpenFileButton.TabIndex = 0;
@@ -64,7 +64,7 @@
             // MainTextBox
             // 
             this.MainTextBox.Location = new System.Drawing.Point(281, 159);
-            this.MainTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.MainTextBox.Margin = new System.Windows.Forms.Padding(4);
             this.MainTextBox.Multiline = true;
             this.MainTextBox.Name = "MainTextBox";
             this.MainTextBox.ReadOnly = true;
@@ -74,7 +74,7 @@
             // DataTextBox
             // 
             this.DataTextBox.Location = new System.Drawing.Point(84, 27);
-            this.DataTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.DataTextBox.Margin = new System.Windows.Forms.Padding(4);
             this.DataTextBox.Multiline = true;
             this.DataTextBox.Name = "DataTextBox";
             this.DataTextBox.ReadOnly = true;
@@ -84,7 +84,7 @@
             // button2
             // 
             this.button2.Location = new System.Drawing.Point(541, 172);
-            this.button2.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.button2.Margin = new System.Windows.Forms.Padding(4);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(189, 64);
             this.button2.TabIndex = 3;
@@ -95,7 +95,7 @@
             // CleanupButton
             // 
             this.CleanupButton.Location = new System.Drawing.Point(84, 218);
-            this.CleanupButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.CleanupButton.Margin = new System.Windows.Forms.Padding(4);
             this.CleanupButton.Name = "CleanupButton";
             this.CleanupButton.Size = new System.Drawing.Size(189, 64);
             this.CleanupButton.TabIndex = 4;
@@ -108,7 +108,7 @@
             this.CellSearchTextBox.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.CellSearchTextBox.Font = new System.Drawing.Font("Microsoft New Tai Lue", 8.25F, ((System.Drawing.FontStyle)((System.Drawing.FontStyle.Bold | System.Drawing.FontStyle.Italic))), System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.CellSearchTextBox.Location = new System.Drawing.Point(541, 103);
-            this.CellSearchTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.CellSearchTextBox.Margin = new System.Windows.Forms.Padding(4);
             this.CellSearchTextBox.Name = "CellSearchTextBox";
             this.CellSearchTextBox.ReadOnly = true;
             this.CellSearchTextBox.Size = new System.Drawing.Size(184, 18);
@@ -118,7 +118,7 @@
             // cellBox1
             // 
             this.cellBox1.Location = new System.Drawing.Point(541, 129);
-            this.cellBox1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cellBox1.Margin = new System.Windows.Forms.Padding(4);
             this.cellBox1.Name = "cellBox1";
             this.cellBox1.Size = new System.Drawing.Size(87, 22);
             this.cellBox1.TabIndex = 7;
@@ -126,7 +126,7 @@
             // cellBox2
             // 
             this.cellBox2.Location = new System.Drawing.Point(636, 129);
-            this.cellBox2.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cellBox2.Margin = new System.Windows.Forms.Padding(4);
             this.cellBox2.Name = "cellBox2";
             this.cellBox2.Size = new System.Drawing.Size(94, 22);
             this.cellBox2.TabIndex = 8;
@@ -135,7 +135,7 @@
             // 
             this.StartButton.Enabled = false;
             this.StartButton.Location = new System.Drawing.Point(84, 345);
-            this.StartButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.StartButton.Margin = new System.Windows.Forms.Padding(4);
             this.StartButton.Name = "StartButton";
             this.StartButton.Size = new System.Drawing.Size(189, 64);
             this.StartButton.TabIndex = 10;
@@ -148,7 +148,7 @@
             this.LoadingImage.Image = global::MF_XLS_Parser.Properties.Resources.loading;
             this.LoadingImage.InitialImage = global::MF_XLS_Parser.Properties.Resources.loading;
             this.LoadingImage.Location = new System.Drawing.Point(16, 345);
-            this.LoadingImage.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.LoadingImage.Margin = new System.Windows.Forms.Padding(4);
             this.LoadingImage.Name = "LoadingImage";
             this.LoadingImage.Size = new System.Drawing.Size(67, 64);
             this.LoadingImage.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -161,7 +161,7 @@
             // 
             this.RowConfirmButton.Enabled = false;
             this.RowConfirmButton.Location = new System.Drawing.Point(541, 272);
-            this.RowConfirmButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.RowConfirmButton.Margin = new System.Windows.Forms.Padding(4);
             this.RowConfirmButton.Name = "RowConfirmButton";
             this.RowConfirmButton.Size = new System.Drawing.Size(165, 64);
             this.RowConfirmButton.TabIndex = 12;
@@ -172,7 +172,7 @@
             // RowBox1
             // 
             this.RowBox1.Location = new System.Drawing.Point(714, 311);
-            this.RowBox1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.RowBox1.Margin = new System.Windows.Forms.Padding(4);
             this.RowBox1.Name = "RowBox1";
             this.RowBox1.Size = new System.Drawing.Size(87, 22);
             this.RowBox1.TabIndex = 13;
@@ -183,7 +183,7 @@
             this.AppLoadingImage.Image = global::MF_XLS_Parser.Properties.Resources.loading;
             this.AppLoadingImage.InitialImage = global::MF_XLS_Parser.Properties.Resources.loading;
             this.AppLoadingImage.Location = new System.Drawing.Point(16, 146);
-            this.AppLoadingImage.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.AppLoadingImage.Margin = new System.Windows.Forms.Padding(4);
             this.AppLoadingImage.Name = "AppLoadingImage";
             this.AppLoadingImage.Size = new System.Drawing.Size(67, 64);
             this.AppLoadingImage.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -196,7 +196,7 @@
             // 
             this.FilterStartButton.Enabled = false;
             this.FilterStartButton.Location = new System.Drawing.Point(281, 345);
-            this.FilterStartButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.FilterStartButton.Margin = new System.Windows.Forms.Padding(4);
             this.FilterStartButton.Name = "FilterStartButton";
             this.FilterStartButton.Size = new System.Drawing.Size(189, 64);
             this.FilterStartButton.TabIndex = 15;
@@ -208,7 +208,7 @@
             // 
             this.TestButton.Enabled = false;
             this.TestButton.Location = new System.Drawing.Point(281, 218);
-            this.TestButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.TestButton.Margin = new System.Windows.Forms.Padding(4);
             this.TestButton.Name = "TestButton";
             this.TestButton.Size = new System.Drawing.Size(189, 64);
             this.TestButton.TabIndex = 17;
@@ -219,7 +219,7 @@
             // RowBox2
             // 
             this.RowBox2.Location = new System.Drawing.Point(714, 281);
-            this.RowBox2.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.RowBox2.Margin = new System.Windows.Forms.Padding(4);
             this.RowBox2.Name = "RowBox2";
             this.RowBox2.Size = new System.Drawing.Size(87, 22);
             this.RowBox2.TabIndex = 19;
@@ -232,9 +232,10 @@
             this.ListBox.Multiline = true;
             this.ListBox.Name = "ListBox";
             this.ListBox.ReadOnly = true;
-            this.ListBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.ListBox.ScrollBars = System.Windows.Forms.ScrollBars.Both;
             this.ListBox.Size = new System.Drawing.Size(193, 354);
             this.ListBox.TabIndex = 20;
+            this.ListBox.WordWrap = false;
             // 
             // MissingBox
             // 
@@ -271,7 +272,7 @@
             this.Controls.Add(this.DataTextBox);
             this.Controls.Add(this.MainTextBox);
             this.Controls.Add(this.OpenFileButton);
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "Main_Form";
             this.Text = " ";
             ((System.ComponentModel.ISupportInitialize)(this.LoadingImage)).EndInit();

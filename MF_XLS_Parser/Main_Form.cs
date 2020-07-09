@@ -85,7 +85,7 @@ namespace MF_XLS_Parser
         /// <summary>
         /// Hash set of the product codes.
         /// </summary>
-        public HashSet<long> codesList { get; private set; }
+        public List<string> codesList { get; private set; }
 
         /// <summary>
         /// Keeps track of the elapsed time.
@@ -267,7 +267,7 @@ namespace MF_XLS_Parser
                 try
                 {
                     //Read file from dialog.
-                    codesList = new HashSet<long>();
+                    codesList = new List<string>();
                     OpenFileDialog openDialog = new OpenFileDialog();
                     if (openDialog.ShowDialog() == DialogResult.OK)
                     {
@@ -275,7 +275,8 @@ namespace MF_XLS_Parser
                         string line;
                         while ((line = sr.ReadLine()) != null)
                         {
-                            codesList.Add(Int64.Parse(line));
+                            line.Trim().ToUpper();
+                            codesList.Add(line);
                         }
                         sr.Close();
                     }
@@ -468,7 +469,7 @@ namespace MF_XLS_Parser
         /// <param name="newSheetPositionX">Starting column cell in which the parsed data is copied.</param>
         /// <param name="newSheetPositionY">Starting row cell in which the parsed data is copied.</param>
         /// <param name="filterTerm">Filter term</param>
-        private void startFiltering(int newSheetPositionX, int newSheetPositionY, HashSet<long> codesList)
+        private void startFiltering(int newSheetPositionX, int newSheetPositionY, List<string> codesList)
         {
             try
             {
@@ -476,7 +477,7 @@ namespace MF_XLS_Parser
                 int maxRows = input.fullRange.Rows.Count;
                 if (state == State.Testing) maxRows = 1000;
                 int count = 0;
-                Dictionary<long, DataBlock> contents = new Dictionary<long, DataBlock>();
+                Dictionary<string, DataBlock> contents = new Dictionary<string, DataBlock>();
 
 
                 int currentPosition = startingRows[0];
@@ -522,19 +523,20 @@ namespace MF_XLS_Parser
                     {
                         nullCount = 0;
                         long code = Int64.Parse((input.fullRange.Cells[currentPosition, input.dataColumns[0]]).Value2);
+                        string name = (input.fullRange.Cells[currentPosition, namesColumn]).Value2;
 
-                        if (codesList.Contains(code))
+                        if (codesList.Contains(name))
                         {
                             //Create DataBlock to store data.
                             DataBlock block;
 
-                            if (!contents.TryGetValue(code, out block))
+                            if (!contents.TryGetValue(name, out block))
                             {
                                 //Code copying.
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX] = code.ToString();
 
                                 //Name copying.
-                                string name = (input.fullRange.Cells[currentPosition, namesColumn]).Value2;
+                               
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 1] = name;
 
                                 //Quantity copying.
@@ -547,7 +549,7 @@ namespace MF_XLS_Parser
 
                                 //Save in DataBlock
 
-                                contents.Add(code, new DataBlock(name, code, quantity, total, newSheetPositionY));
+                                contents.Add(name, new DataBlock(name, code, quantity, total, newSheetPositionY));
 
                                 //Unit Price copying.
 
@@ -602,8 +604,8 @@ namespace MF_XLS_Parser
                                 output.currentSheet.Cells[block.DataRow, newSheetPositionX + 3] = total.ToString();
 
                                 //Replace old DataBlock with the new one (update values).
-                                contents.Remove(code);
-                                contents.Add(code, block);
+                                contents.Remove(name);
+                                contents.Add(name, block);
 
                             }
                         }
@@ -628,11 +630,11 @@ namespace MF_XLS_Parser
                         count = 0;
                     }
                 }
-                foreach(int code in contents.Keys)
+                foreach(string name in contents.Keys)
                 {
-                    if (codesList.Contains(code))
+                    if (codesList.Contains(name))
                     {
-                        codesList.Remove(code);
+                        codesList.Remove(name);
                     }
                 }
             }
@@ -929,9 +931,11 @@ namespace MF_XLS_Parser
 
                     // debug
                     StringBuilder sb = new StringBuilder();
-                    foreach (long missingCode in codesList.ToArray())
+                    int count = 0;
+                    foreach (string missingCode in codesList)
                     {
-                        sb.Append("-");
+                        sb.Append(count++);
+                        sb.Append(") ");
                         sb.Append(missingCode.ToString());
                         sb.Append("\r\n");
                     }
