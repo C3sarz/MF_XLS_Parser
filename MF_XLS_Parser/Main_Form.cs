@@ -92,6 +92,8 @@ namespace MF_XLS_Parser
         /// </summary>
         private Stopwatch timer = new Stopwatch();
 
+        int duplicates = 0;
+
         /// <summary>
         /// States of the program.
         /// </summary>
@@ -219,6 +221,7 @@ namespace MF_XLS_Parser
                 input.currentWorkbook.Close();
                 Marshal.ReleaseComObject(input.currentWorkbook);
                 DataTextBox.Clear();
+                ListBox.Clear();
                 isFileLoaded = false;
             }
 
@@ -273,10 +276,16 @@ namespace MF_XLS_Parser
                     {
                         StreamReader sr = new StreamReader(openDialog.FileName);
                         string line;
+                        int count = 5;
                         while ((line = sr.ReadLine()) != null)
                         {
                             line.Trim().ToUpper();
-                            codesList.Add(line);
+                            if (codesList.Contains(line)) 
+                            { 
+                            //do nothing
+                            }
+                            else codesList.Add(line);
+                            count++;
                         }
                         sr.Close();
                     }
@@ -554,20 +563,19 @@ namespace MF_XLS_Parser
                                 //Unit Price copying.
 
                                 /////////////////////////////////////////
-                                double value;
-                                char unit = findUnitValue(name, out value);
+                                char unit = findUnitValue(name);
                                 switch (unit)
                                 {
                                     case 'u':
 
-                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "UNIDAD" + value;
+                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "UNIDAD";
                                         break;
 
                                     case 'k':
-                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "KG" + value;
+                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "KG";
                                         break;
                                     case 'l':
-                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "L" + value;
+                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "L";
                                         break;
                                     case 'n':
                                         output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "n";
@@ -606,6 +614,7 @@ namespace MF_XLS_Parser
                                 //Replace old DataBlock with the new one (update values).
                                 contents.Remove(name);
                                 contents.Add(name, block);
+                                duplicates++;
 
                             }
                         }
@@ -651,16 +660,14 @@ namespace MF_XLS_Parser
             }
         }
 
-        private char findUnitValue(string name, out double value)
+        private char findUnitValue(string name)
         {
-            value = 0; //debug
             name.ToUpper();
             int specialCase = -1;
 
             //Pre-tokenizing searches
             if (name.Contains("KILO"))
             {
-                value = 1;
                 return 'k';
             }
             else if (name.Contains("PAQ") || name.Contains("PACK"))
@@ -681,6 +688,7 @@ namespace MF_XLS_Parser
             }
 
             //String tokenizing
+            double value;
             string[] words = name.Split(new char[] { ' ', '.', 'X', ',' });
             foreach (string word in words)
             {
@@ -689,7 +697,6 @@ namespace MF_XLS_Parser
                     //Get value
                     if (word.Equals("KG"))
                     {
-                        value = 1;
                         return 'k';
                     }
                     else
@@ -718,7 +725,6 @@ namespace MF_XLS_Parser
                     string temp = word.Replace("GR", "");
                     if (Double.TryParse(temp, out value))
                     {
-                        value = value / 1000;
                         return 'k';
                     }
                 }
@@ -727,7 +733,6 @@ namespace MF_XLS_Parser
                 {
                     if (word.Equals("UNIDAD"))
                     {
-                        value = 1;
                         return 'u';
                     }
                     else
@@ -751,7 +756,6 @@ namespace MF_XLS_Parser
                     string temp = word.Replace("ML", "");
                     if (Double.TryParse(temp, out value))
                     {
-                        value = value / 1000;
                         return 'l';
                     }
                 }
@@ -761,7 +765,6 @@ namespace MF_XLS_Parser
                     string temp = word.Replace("CC", "");
                     if (Double.TryParse(temp, out value))
                     {
-                        value = value / 1000;
                         return 'l';
                     }
                 }
@@ -771,7 +774,6 @@ namespace MF_XLS_Parser
                     //Get value
                     if (word.Equals("L"))
                     {
-                        value = 1;
                         return 'l';
                     }
                     else
@@ -788,7 +790,6 @@ namespace MF_XLS_Parser
                     //Get value
                     if (word.Equals("K"))
                     {
-                        value = 1;
                         return 'l';
                     }
                     else
@@ -915,7 +916,7 @@ namespace MF_XLS_Parser
                     FilterStartButton.Enabled = true;
                     TestButton.Enabled = true;
                     LoadingImage.Visible = false;
-                    input.dataColumnsReady = false;
+                     input.dataColumnsReady = false;
                     input.typeColumnsReady = false;
                     //Displays the total time it took to carry out the processing.
                     if (timer.IsRunning)
@@ -923,7 +924,7 @@ namespace MF_XLS_Parser
                         timer.Stop();
                         TimeSpan ts = timer.Elapsed;
                         string totalTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
-                        MainTextBox.Text = "Tiempo total: " + totalTime;
+                        MainTextBox.Text = "Tiempo total: " + totalTime + "\r\nDuplicados: " + duplicates;
                     }
                     RowBox1.BackColor = Color.White;
                     RowBox2.BackColor = Color.White;
@@ -943,7 +944,6 @@ namespace MF_XLS_Parser
                     //
 
                     state = State.Idle;
-                    MessageBox.Show("Proceso completado");
                 }
             }
         }
