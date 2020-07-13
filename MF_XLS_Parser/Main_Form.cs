@@ -83,9 +83,11 @@ namespace MF_XLS_Parser
         private string fileName;
 
         /// <summary>
-        /// Hash set of the product codes.
+        /// Hash set of the product names.
         /// </summary>
-        public List<string> codesList { get; private set; }
+        public List<string> namesList { get; private set; }
+
+        public Dictionary<string, string> FormulaStrings = new Dictionary<string, string>();
 
         /// <summary>
         /// Keeps track of the elapsed time.
@@ -270,25 +272,41 @@ namespace MF_XLS_Parser
                 try
                 {
                     //Read file from dialog.
-                    codesList = new List<string>();
-                    OpenFileDialog openDialog = new OpenFileDialog();
-                    if (openDialog.ShowDialog() == DialogResult.OK)
+                    namesList = new List<string>();
+                    OpenFileDialog namesDialog = new OpenFileDialog();
+                    OpenFileDialog formulaDialog = new OpenFileDialog();
+                    if (namesDialog.ShowDialog() == DialogResult.OK)
                     {
-                        StreamReader sr = new StreamReader(openDialog.FileName);
-                        string line;
-                        int count = 5;
-                        while ((line = sr.ReadLine()) != null)
+                        if (formulaDialog.ShowDialog() == DialogResult.OK)
                         {
-                            line.Trim().ToUpper();
-                            if (codesList.Contains(line)) 
-                            { 
-                            //do nothing
+                            StreamReader sr1 = new StreamReader(namesDialog.FileName);
+
+                            StreamReader sr2 = new StreamReader(formulaDialog.FileName);
+                            string lineA;
+                            string lineB;
+                            int count = 5;
+                            while ((lineA = sr1.ReadLine()) != null)
+                            {
+                                lineA = lineA.ToUpper();
+                                lineB = sr2.ReadLine();
+                                if (namesList.Contains(lineA))
+                                {
+                                    //do nothing
+                                }
+                                else
+                                {
+                                    namesList.Add(lineA);
+                                    FormulaStrings.Add(lineA, lineB);
+
+                                }
+                                count++;
                             }
-                            else codesList.Add(line);
-                            count++;
+                            sr1.Close();
+                            sr2.Close();
                         }
-                        sr.Close();
+                        else throw new Exception("Error loading file.");
                     }
+                    else throw new Exception("Error loading file.");
                 }
                 catch (Exception ex)
                 {
@@ -301,6 +319,63 @@ namespace MF_XLS_Parser
                 backgroundWorker2.RunWorkerAsync();
             }
             else MessageBox.Show("Por favor confimar fila y filtro");
+        }
+
+        private double getUnitaryPrice(string name, double quantity, double total)
+        {
+            double value = total / quantity;
+            string formula;
+            if (FormulaStrings.TryGetValue(name, out formula))
+            {
+                //If there is no extra operation.
+                if (formula.Length == 23)
+                {
+                    return value;
+                }
+
+                //If the formula has '*'
+                else if (formula.Contains('*'))
+                {
+                    //Split into parts
+                    string[] parts = formula.Split(new char[] { '*' });
+
+                    //If there are no operations after parenthesis
+                    if (parts[1].Length - 1 == parts[1].LastIndexOf(')'))
+                    {
+                        parts[1] = parts[1].Replace("(", "");
+                        parts[1] = parts[1].Replace(")", "");
+                        string[] subparts = parts[1].Split('/');
+                        double a = Double.Parse(subparts[0]);
+                        double b = Double.Parse(subparts[1]);
+
+                        return value * (a / b);
+                    }
+                    //If there is division after parenthesis.
+                    else
+                    {
+                        string[] subparts = parts[1].Split(new char[] { '/', '(', ')' });
+                        double a = Double.Parse(subparts[1]);
+                        double b = Double.Parse(subparts[2]);
+                        double c = Double.Parse(subparts[4]);
+                        return value * (a / b) / c;
+                    }
+                }
+                //If only division after base value.
+                else if (formula[23] == '/')
+                {
+                    string[] parts = formula.Split(new char[] { '/', '(', ')' });
+                    double a = Double.Parse(parts[2]);
+                    return value / a;
+                }
+                else
+                {
+                    throw new Exception("Formula parsing failed.");
+                }
+            }
+            else
+            {
+                throw new Exception("Formula not found.");
+            }
         }
 
         private void TestButton_Click(object sender, EventArgs e)
@@ -545,7 +620,7 @@ namespace MF_XLS_Parser
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX] = code.ToString();
 
                                 //Name copying.
-                               
+
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 1] = name;
 
                                 //Quantity copying.
@@ -563,30 +638,30 @@ namespace MF_XLS_Parser
                                 //Unit Price copying.
 
                                 /////////////////////////////////////////
-                                char unit = findUnitValue(name);
-                                switch (unit)
-                                {
-                                    case 'u':
+                                //char unit = findUnitValue(name);
+                                //switch (unit)
+                                //{
+                                //    case 'u':
 
-                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "UNIDAD";
-                                        break;
+                                //        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "UNIDAD";
+                                //        break;
 
-                                    case 'k':
-                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "KG";
-                                        break;
-                                    case 'l':
-                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "L";
-                                        break;
-                                    case 'n':
-                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "n";
-                                        (output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] as Excel.Range).Interior.Color = Color.Orange;
-                                        break;
-                                    default:
-                                        (output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] as Excel.Range).Interior.Color = Color.Red;
-                                        break;
-                                }
+                                //    case 'k':
+                                //        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "KG";
+                                //        break;
+                                //    case 'l':
+                                //        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "L";
+                                //        break;
+                                //    case 'n':
+                                //        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "n";
+                                //        (output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] as Excel.Range).Interior.Color = Color.Orange;
+                                //        break;
+                                //    default:
+                                //        (output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] as Excel.Range).Interior.Color = Color.Red;
+                                //        break;
+                                //}
 
-
+                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = getUnitaryPrice(name.ToUpper(), quantity, total);
 
                                 /////////////////////////////////////////
                                 //Type copying.
@@ -639,7 +714,7 @@ namespace MF_XLS_Parser
                         count = 0;
                     }
                 }
-                foreach(string name in contents.Keys)
+                foreach (string name in contents.Keys)
                 {
                     if (codesList.Contains(name))
                     {
@@ -713,11 +788,11 @@ namespace MF_XLS_Parser
                     return 'p';
                 }
 
-                else if(word.Contains("UND"))
+                else if (word.Contains("UND"))
                 {
                     //Get rid of UND to get amount.
                     string temp = word.Replace("UND", "");
-                    if (Double.TryParse(temp, out value)) return 'u';                
+                    if (Double.TryParse(temp, out value)) return 'u';
                 }
 
                 else if (word.Contains("GR"))
@@ -729,7 +804,7 @@ namespace MF_XLS_Parser
                     }
                 }
 
-                else if(word.Contains("UNIDAD"))
+                else if (word.Contains("UNIDAD"))
                 {
                     if (word.Equals("UNIDAD"))
                     {
@@ -840,7 +915,7 @@ namespace MF_XLS_Parser
                 int newSheetPositionY = 3;
 
                 //Start data filtering.
-                startFiltering(newSheetPositionX, newSheetPositionY, codesList);
+                startFiltering(newSheetPositionX, newSheetPositionY, namesList);
             }
             workerThreadEnabled = false;
         }
@@ -916,7 +991,7 @@ namespace MF_XLS_Parser
                     FilterStartButton.Enabled = true;
                     TestButton.Enabled = true;
                     LoadingImage.Visible = false;
-                     input.dataColumnsReady = false;
+                    input.dataColumnsReady = false;
                     input.typeColumnsReady = false;
                     //Displays the total time it took to carry out the processing.
                     if (timer.IsRunning)
@@ -933,7 +1008,7 @@ namespace MF_XLS_Parser
                     // debug
                     StringBuilder sb = new StringBuilder();
                     int count = 0;
-                    foreach (string missingCode in codesList)
+                    foreach (string missingCode in namesList)
                     {
                         sb.Append(count++);
                         sb.Append(") ");

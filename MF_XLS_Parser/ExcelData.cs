@@ -1,15 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Office.Interop.Excel;
-using System.Collections.Concurrent;
-using Excel = Microsoft.Office.Interop.Excel;
-using System.Runtime.InteropServices;
-using System.Xml;
-using System.Windows.Forms;
 using System.Reflection;
+using Excel = Microsoft.Office.Interop.Excel;
 
 namespace MF_XLS_Parser
 {
@@ -59,7 +50,7 @@ namespace MF_XLS_Parser
         public ExcelData(string fileName)
         {
             //New workbook creation.
-            if(fileName is null)
+            if (fileName is null)
             {
                 excelApp = new Excel.Application();
                 excelApp.Visible = false;
