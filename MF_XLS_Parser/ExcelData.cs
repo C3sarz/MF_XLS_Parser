@@ -69,6 +69,8 @@ namespace MF_XLS_Parser
                 currentSheet.Cells[1, 7] = "Grupo";
                 currentSheet.Cells[1, 8] = "Categoria";
                 currentSheet.Cells[1, 9] = "Sub-Categoria";
+                currentSheet.Cells[1, 11] = "Mes";
+                currentSheet.Cells[1, 12] = "Año";
             }
             //Existing workbook loading.
             else
