@@ -75,7 +75,7 @@ namespace MF_XLS_Parser
         /// <summary>
         /// Determines if a file is loaded.
         /// </summary>
-        public bool isFileLoaded { get; private set; } = false;
+        public bool IsFileLoaded { get; private set; } = false;
 
         /// <summary>
         /// Stores the input file location.
@@ -83,18 +83,26 @@ namespace MF_XLS_Parser
         private string fileName;
 
         /// <summary>
-        /// Hash set of the product names.
+        /// List set of the product names.
         /// </summary>
-        public List<string> namesList { get; private set; }
+        public HashSet<string> NamesList { get; private set; }
 
-        public Dictionary<string, string> FormulaStrings = new Dictionary<string, string>();
+        public Dictionary<string, string> FormulaStrings;
 
         /// <summary>
         /// Keeps track of the elapsed time.
         /// </summary>
         private Stopwatch timer = new Stopwatch();
 
-        int duplicates = 0;
+        /// <summary>
+        /// Duplicates found while processing an excel file.
+        /// </summary>
+        int duplicatesProcessed = 0;
+
+        /// <summary>
+        /// Duplicates found in input file
+        /// </summary>
+        int inputDuplicates = 0;
 
         /// <summary>
         /// States of the program.
@@ -143,7 +151,7 @@ namespace MF_XLS_Parser
                 OpenFileDialog openDialog = new OpenFileDialog();
                 if (openDialog.ShowDialog() == DialogResult.OK)
                 {
-                    if (isFileLoaded) Cleanup();
+                    if (IsFileLoaded) Cleanup();
                     state = State.LoadingFile;
                     fileName = openDialog.FileName;
                     OpenFileButton.Enabled = false;
@@ -224,7 +232,7 @@ namespace MF_XLS_Parser
                 Marshal.ReleaseComObject(input.currentWorkbook);
                 DataTextBox.Clear();
                 ListBox.Clear();
-                isFileLoaded = false;
+                IsFileLoaded = false;
             }
 
             catch (Exception ex)
@@ -272,7 +280,8 @@ namespace MF_XLS_Parser
                 try
                 {
                     //Read file from dialog.
-                    namesList = new List<string>();
+                    NamesList = new HashSet<string>();
+                    FormulaStrings = new Dictionary<string, string>();
                     OpenFileDialog namesDialog = new OpenFileDialog();
                     OpenFileDialog formulaDialog = new OpenFileDialog();
                     if (namesDialog.ShowDialog() == DialogResult.OK)
@@ -284,18 +293,19 @@ namespace MF_XLS_Parser
                             StreamReader sr2 = new StreamReader(formulaDialog.FileName);
                             string lineA;
                             string lineB;
-                            int count = 5;
+                            int count = 1;
                             while ((lineA = sr1.ReadLine()) != null)
                             {
                                 lineA = lineA.ToUpper();
                                 lineB = sr2.ReadLine();
-                                if (namesList.Contains(lineA))
+                                if (NamesList.Contains(lineA))
                                 {
                                     //do nothing
+                                    inputDuplicates++;
                                 }
                                 else
                                 {
-                                    namesList.Add(lineA);
+                                    NamesList.Add(lineA);
                                     FormulaStrings.Add(lineA, lineB);
 
                                 }
@@ -553,7 +563,7 @@ namespace MF_XLS_Parser
         /// <param name="newSheetPositionX">Starting column cell in which the parsed data is copied.</param>
         /// <param name="newSheetPositionY">Starting row cell in which the parsed data is copied.</param>
         /// <param name="filterTerm">Filter term</param>
-        private void startFiltering(int newSheetPositionX, int newSheetPositionY, List<string> codesList)
+        private void startFiltering(int newSheetPositionX, int newSheetPositionY)
         {
             try
             {
@@ -607,9 +617,9 @@ namespace MF_XLS_Parser
                     {
                         nullCount = 0;
                         long code = Int64.Parse((input.fullRange.Cells[currentPosition, input.dataColumns[0]]).Value2);
-                        string name = (input.fullRange.Cells[currentPosition, namesColumn]).Value2;
+                        string name = (input.fullRange.Cells[currentPosition, namesColumn]).Value2.ToUpper();
 
-                        if (codesList.Contains(name))
+                        if (NamesList.Contains(name))
                         {
                             //Create DataBlock to store data.
                             DataBlock block;
@@ -670,6 +680,11 @@ namespace MF_XLS_Parser
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 7] = category;
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 8] = subCategory;
 
+                                //Date copying
+
+                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 10] = input.Month;
+                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 11] = input.Year;
+
                                 newSheetPositionY++;
                             }
                             else
@@ -689,7 +704,7 @@ namespace MF_XLS_Parser
                                 //Replace old DataBlock with the new one (update values).
                                 contents.Remove(name);
                                 contents.Add(name, block);
-                                duplicates++;
+                                duplicatesProcessed++;
 
                             }
                         }
@@ -716,9 +731,9 @@ namespace MF_XLS_Parser
                 }
                 foreach (string name in contents.Keys)
                 {
-                    if (codesList.Contains(name))
+                    if (NamesList.Contains(name))
                     {
-                        codesList.Remove(name);
+                        NamesList.Remove(name);
                     }
                 }
             }
@@ -888,7 +903,10 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
-            if (state == State.LoadingFile) input = new ExcelData(fileName);
+            if (state == State.LoadingFile)
+            {
+                input = new ExcelData(fileName);
+            }
         }
 
         /// <summary>
@@ -915,7 +933,7 @@ namespace MF_XLS_Parser
                 int newSheetPositionY = 3;
 
                 //Start data filtering.
-                startFiltering(newSheetPositionX, newSheetPositionY, namesList);
+                startFiltering(newSheetPositionX, newSheetPositionY);
             }
             workerThreadEnabled = false;
         }
@@ -971,7 +989,7 @@ namespace MF_XLS_Parser
         {
             if (state == State.LoadingFile)
             {
-                isFileLoaded = true;
+                IsFileLoaded = true;
                 AppLoadingImage.Visible = false;
                 StartButton.Enabled = true;
                 TestButton.Enabled = true;
@@ -999,7 +1017,7 @@ namespace MF_XLS_Parser
                         timer.Stop();
                         TimeSpan ts = timer.Elapsed;
                         string totalTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
-                        MainTextBox.Text = "Tiempo total: " + totalTime + "\r\nDuplicados: " + duplicates;
+                        MainTextBox.Text = "Tiempo total: " + totalTime + "\r\nDuplicados en archivo: " + duplicatesProcessed + "\r\nDuplicados en base: " + inputDuplicates;
                     }
                     RowBox1.BackColor = Color.White;
                     RowBox2.BackColor = Color.White;
@@ -1008,11 +1026,11 @@ namespace MF_XLS_Parser
                     // debug
                     StringBuilder sb = new StringBuilder();
                     int count = 0;
-                    foreach (string missingCode in namesList)
+                    foreach (string missingCode in NamesList)
                     {
                         sb.Append(count++);
                         sb.Append(") ");
-                        sb.Append(missingCode.ToString());
+                        sb.Append(missingCode);
                         sb.Append("\r\n");
                     }
                     ListBox.Text = sb.ToString();
@@ -1041,6 +1059,8 @@ namespace MF_XLS_Parser
                 input.typeColumnsReady = true;
                 RowBox2.BackColor = Color.LightGreen;
                 MainTextBox.Text = input.fullRange.Rows.Count.ToString();
+                input.Month = MonthTextBox.Text;
+                input.Year = YearTextBox.Text;
             }
             catch (Exception ex)
             {
@@ -1059,7 +1079,7 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (isFileLoaded) Cleanup();
+            if (IsFileLoaded) Cleanup();
         }
     }
 }

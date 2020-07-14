@@ -47,6 +47,10 @@ namespace MF_XLS_Parser
         /// </summary>
         public int[] typeColumns;
 
+        public string Month;
+
+        public string Year;
+
         public ExcelData(string fileName)
         {
             //New workbook creation.
