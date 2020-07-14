@@ -366,6 +366,8 @@ namespace MF_XLS_Parser
                         string[] subparts = parts[1].Split(new char[] { '/', '(', ')' });
                         double a = Double.Parse(subparts[1]);
                         double b = Double.Parse(subparts[2]);
+                        //Replace commas by dots for parsing.
+                        subparts[4] = subparts[4].Replace(",", "."); 
                         double c = Double.Parse(subparts[4]);
                         return value * (a / b) / c;
                     }
@@ -374,6 +376,8 @@ namespace MF_XLS_Parser
                 else if (formula[23] == '/')
                 {
                     string[] parts = formula.Split(new char[] { '/', '(', ')' });
+                    //Replace commas by dots for parsing.
+                    parts[2] = parts[2].Replace(",", ".");
                     double a = Double.Parse(parts[2]);
                     return value / a;
                 }
@@ -1022,10 +1026,13 @@ namespace MF_XLS_Parser
                     RowBox1.BackColor = Color.White;
                     RowBox2.BackColor = Color.White;
                     output.excelApp.Visible = true;
+                    timer.Reset();
+                    duplicatesProcessed = 0;
+                    inputDuplicates = 0;
 
                     // debug
                     StringBuilder sb = new StringBuilder();
-                    int count = 0;
+                    int count = 1;
                     foreach (string missingCode in NamesList)
                     {
                         sb.Append(count++);
