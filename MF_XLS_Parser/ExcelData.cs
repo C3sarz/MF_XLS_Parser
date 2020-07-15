@@ -47,8 +47,14 @@ namespace MF_XLS_Parser
         /// </summary>
         public int[] typeColumns;
 
+        /// <summary>
+        /// Excel file month.
+        /// </summary>
         public string Month;
 
+        /// <summary>
+        /// Excel file year.
+        /// </summary>
         public string Year;
 
         public ExcelData(string fileName)

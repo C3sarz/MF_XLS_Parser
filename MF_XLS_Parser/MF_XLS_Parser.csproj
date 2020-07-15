@@ -92,7 +92,6 @@
   <ItemGroup>
     <Compile Include="DataBlock.cs" />
     <Compile Include="ExcelData.cs" />
-    <Compile Include="NamesBlock.cs" />
     <Compile Include="Main_Form.cs">
       <SubType>Form</SubType>
     </Compile>

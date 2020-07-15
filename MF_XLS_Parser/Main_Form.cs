@@ -29,7 +29,14 @@ namespace MF_XLS_Parser
 {
     public partial class Main_Form : Form
     {
+        /// <summary>
+        /// Input file to be processed.
+        /// </summary>
         ExcelData input;
+
+        /// <summary>
+        /// Output file of processed data.
+        /// </summary>
         ExcelData output;
 
         /// <summary>
@@ -43,14 +50,37 @@ namespace MF_XLS_Parser
         private BackgroundWorker backgroundWorker2 = new BackgroundWorker();
 
         /// <summary>
-        /// Third background worker.
+        /// Backing variable for WorkerThreadEnabled.
         /// </summary>
-        private BackgroundWorker backgroundWorker3 = new BackgroundWorker();
+        private bool workerThreadEnabled = false;
 
         /// <summary>
         /// Enables the lopp worker thread.
         /// </summary>
-        public bool workerThreadEnabled = false;
+        public bool WorkerThreadEnabled { 
+            get
+            {
+                return workerThreadEnabled;
+            }
+            set
+            {
+                workerThreadEnabled = value;
+                if (workerThreadEnabled)
+                {
+                    CancelButton.Enabled = true;
+                    FilterStartButton.Enabled = false;
+                    OpenFileButton.Enabled = false;
+                    RowConfirmButton.Enabled = false;
+                }
+                else
+                {
+                    CancelButton.Enabled = false;
+                    FilterStartButton.Enabled = true;
+                    OpenFileButton.Enabled = true;
+                    RowConfirmButton.Enabled = true;
+                }
+            }
+        }
 
         /// <summary>
         /// Rows where the data starts.
@@ -68,11 +98,6 @@ namespace MF_XLS_Parser
         int activeThreads;
 
         /// <summary>
-        /// Queue that keeps track of data types for multithreading.
-        /// </summary>
-        private ConcurrentQueue<NamesBlock> namesQ = new ConcurrentQueue<NamesBlock>();
-
-        /// <summary>
         /// Determines if a file is loaded.
         /// </summary>
         public bool IsFileLoaded { get; private set; } = false;
@@ -87,6 +112,9 @@ namespace MF_XLS_Parser
         /// </summary>
         public HashSet<string> NamesList { get; private set; }
 
+        /// <summary>
+        /// Name-Formula dictionary for unitary price processing.
+        /// </summary>
         public Dictionary<string, string> FormulaStrings;
 
         /// <summary>
@@ -100,7 +128,7 @@ namespace MF_XLS_Parser
         int duplicatesProcessed = 0;
 
         /// <summary>
-        /// Duplicates found in input file
+        /// Duplicates found in input file.
         /// </summary>
         int inputDuplicates = 0;
 
@@ -110,9 +138,7 @@ namespace MF_XLS_Parser
         public enum State
         {
             Idle,
-            Testing,
             FilterProcessing,
-            FullProcessing,
             LoadingFile
         }
 
@@ -129,99 +155,26 @@ namespace MF_XLS_Parser
             //Worker setup.
             backgroundWorker1.DoWork += BackgroundWorker1_DoWork;
             backgroundWorker2.DoWork += BackgroundWorker2_DoWork;
-            backgroundWorker3.DoWork += BackgroundWorker3_DoWork;
             backgroundWorker1.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
             backgroundWorker2.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
-            backgroundWorker3.RunWorkerCompleted += BackgroundWorkers_RunWorkerCompleted;
             backgroundWorker2.ProgressChanged += Worker2_ProgressChanged;
             backgroundWorker2.WorkerReportsProgress = true;
 
         }
 
-        /// <summary>
-        /// "Open File" button event handler.
-        /// </summary>
-        /// <param name="sender">The button.</param>
-        /// <param name="e">Event.</param>
-        private void OpenFileButton_Click(object sender, EventArgs e)
-        {
-            //File input.
-            try
-            {
-                OpenFileDialog openDialog = new OpenFileDialog();
-                if (openDialog.ShowDialog() == DialogResult.OK)
-                {
-                    if (IsFileLoaded) Cleanup();
-                    state = State.LoadingFile;
-                    fileName = openDialog.FileName;
-                    OpenFileButton.Enabled = false;
-                    DataTextBox.Text = "Archivo cargado: \n\n" + openDialog.FileName;
-                    AppLoadingImage.Visible = true;
-                    backgroundWorker1.RunWorkerAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error cargando el archivo, verifique el formato.");
-            }
-        }
+        ///////////////////////////////////////////////
+        ///Memory and closing functions.
+        ///////////////////////////////////////////////
 
         /// <summary>
-        /// "Show Cell Contents" button event handler.
-        /// </summary>
-        /// <param name="sender">The button.</param>
-        /// <param name="e">Event.</param>
-        private void ShowCellButton_Click(object sender, EventArgs e)
-        {
-            int i = Int32.Parse(cellBox1.Text);
-            int j = Int32.Parse(cellBox2.Text);
-            try
-            {
-                if (input.fullRange.Cells[i, j] != null && input.fullRange.Cells[i, j].Value2 != null)
-                {
-                    DataTextBox.Text = (string)(input.fullRange.Cells[i, j] as Excel.Range).Value2;
-                }
-                else DataTextBox.Text = "Celda Vacia";
-            }
-
-            catch (RuntimeBinderException ex)
-            {
-                DataTextBox.Text = ((double)(input.fullRange.Cells[i, j] as Excel.Range).Value2).ToString();
-            }
-
-            catch (Exception ex)
-            {
-                String errorMessage;
-                errorMessage = "Error: ";
-                errorMessage = String.Concat(errorMessage, ex.Message);
-                errorMessage = String.Concat(errorMessage, "\n Full String: ");
-                errorMessage = String.Concat(errorMessage, ex.ToString());
-                MessageBox.Show(errorMessage, "Error");
-            }
-            //if (xlRange.Cells[i, j].Value2 == null) InfoTextBox.Text = "null";
-            //else InfoTextBox.Text = (xlRange.Cells[i, j] as Excel.Range).Value2.GetType().ToString();
-        }
-
-        /// <summary>
-        /// Cleanup button event handler.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void CleanupButton_Click(object sender, EventArgs e)
-        {
-            Cleanup();
-        }
-
-        /// <summary>
-        /// Gets rid of background threads.
+        /// Releases input file and calls garbage collector.
         /// </summary>
         private void Cleanup()
         {
-            StartButton.Enabled = false;
-            TestButton.Enabled = false;
             FilterStartButton.Enabled = false;
             try
             {
+                //Garbage collector.
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
 
@@ -234,7 +187,6 @@ namespace MF_XLS_Parser
                 ListBox.Clear();
                 IsFileLoaded = false;
             }
-
             catch (Exception ex)
             {
                 MessageBox.Show("Error: No hay documento para cerrar.");
@@ -242,95 +194,26 @@ namespace MF_XLS_Parser
         }
 
         /// <summary>
-        /// Start removal of unecessary cells and parse old cells to a new file.
+        /// Actions to be carried out when the program is closing.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void StartButton_Click(object sender, EventArgs e)
+        private void Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (input.dataColumnsReady)
-            {
-                state = State.FullProcessing;
-                //Workbook
-                StartButton.Enabled = false;
-                LoadingImage.Visible = true;
-                output = new ExcelData(null);
-
-                //Launch worker threads.
-                activeThreads = 2;
-                workerThreadEnabled = true;
-                backgroundWorker2.RunWorkerAsync();
-                backgroundWorker3.RunWorkerAsync();
-            }
-            else MessageBox.Show("Por favor confimar la primera fila de datos.");
+            if (IsFileLoaded) Cleanup();
         }
 
-        private void FilterStartButton_Click(object sender, EventArgs e)
-        {
-            if (input.dataColumnsReady
-                && input.typeColumnsReady)
-            {
-                state = State.FilterProcessing;
-                //Workbook
-                StartButton.Enabled = false;
-                FilterStartButton.Enabled = false;
-                LoadingImage.Visible = true;
-                output = new ExcelData(null);
+        ///////////////////////////////////////////////
+        ///Processing functions.
+        ///////////////////////////////////////////////
 
-                try
-                {
-                    //Read file from dialog.
-                    NamesList = new HashSet<string>();
-                    FormulaStrings = new Dictionary<string, string>();
-                    OpenFileDialog namesDialog = new OpenFileDialog();
-                    OpenFileDialog formulaDialog = new OpenFileDialog();
-                    if (namesDialog.ShowDialog() == DialogResult.OK)
-                    {
-                        if (formulaDialog.ShowDialog() == DialogResult.OK)
-                        {
-                            StreamReader sr1 = new StreamReader(namesDialog.FileName);
-
-                            StreamReader sr2 = new StreamReader(formulaDialog.FileName);
-                            string lineA;
-                            string lineB;
-                            int count = 1;
-                            while ((lineA = sr1.ReadLine()) != null)
-                            {
-                                lineA = lineA.ToUpper();
-                                lineB = sr2.ReadLine();
-                                if (NamesList.Contains(lineA))
-                                {
-                                    //do nothing
-                                    inputDuplicates++;
-                                }
-                                else
-                                {
-                                    NamesList.Add(lineA);
-                                    FormulaStrings.Add(lineA, lineB);
-
-                                }
-                                count++;
-                            }
-                            sr1.Close();
-                            sr2.Close();
-                        }
-                        else throw new Exception("Error loading file.");
-                    }
-                    else throw new Exception("Error loading file.");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Error cargando el archivo, verifique el formato.");
-                }
-
-                //Launch worker threads.
-                activeThreads = 1;
-                workerThreadEnabled = false;
-                backgroundWorker2.RunWorkerAsync();
-            }
-            else MessageBox.Show("Por favor confimar fila y filtro");
-        }
-
+        /// <summary>
+        /// Returns the unitary price of an element from its formula..
+        /// </summary>
+        /// <param name="name">Name of the element.</param>
+        /// <param name="quantity">Element quantity.</param>
+        /// <param name="total">Element total (Gs)</param>
+        /// <returns></returns>
         private double getUnitaryPrice(string name, double quantity, double total)
         {
             double value = total / quantity;
@@ -392,174 +275,6 @@ namespace MF_XLS_Parser
             }
         }
 
-        private void TestButton_Click(object sender, EventArgs e)
-        {
-            if (input.dataColumnsReady && input.typeColumnsReady)
-            {
-                state = State.Testing;
-                //Workbook
-                StartButton.Enabled = false;
-                LoadingImage.Visible = true;
-                output = new ExcelData(null);
-
-                //Launch worker threads.
-                activeThreads = 2;
-                workerThreadEnabled = true;
-                backgroundWorker2.RunWorkerAsync();
-                backgroundWorker3.RunWorkerAsync();
-            }
-            else MessageBox.Show("Por favor confimar las filas de datos especificadas.");
-        }
-
-        private void startNamesCopy(NamesBlock names)
-        {
-            try
-            {
-                // Iteration through cells.
-                for (int i = names.StartRow; i <= names.EndRow; i++)
-                {
-                    output.currentSheet.Cells[i, 6] = names.Section;
-                    output.currentSheet.Cells[i, 7] = names.Group;
-                    output.currentSheet.Cells[i, 8] = names.Category;
-                    output.currentSheet.Cells[i, 9] = names.SubCategory;
-                }
-            }
-
-            //Error handling
-            catch (Exception ex)
-            {
-                String errorMessage;
-                errorMessage = "Error: ";
-                errorMessage = String.Concat(errorMessage, ex.Message);
-                errorMessage = String.Concat(errorMessage, "\n Full String: ");
-                errorMessage = String.Concat(errorMessage, ex.ToString());
-                MessageBox.Show(errorMessage, "Error");
-            }
-        }
-
-        /// <summary>
-        /// Transfers a specified column on the Excel file into a new one, skipping null cells.
-        /// </summary>
-        /// <param name="startingRow">Row to start parsing.</param>
-        /// <param name="newSheetPositionX">Starting column cell in which the parsed data is copied.</param>
-        /// <param name="newSheetPositionY">Starting row cell in which the parsed data is copied.</param>
-        private void startFullTransfer(int newSheetPositionX, int newSheetPositionY)
-        {
-            try
-            {
-                int nullCount = 0;
-                bool dataCopied = false;
-                int startY = newSheetPositionY;
-                int maxRows = input.fullRange.Rows.Count;
-                if (state == State.Testing) maxRows = 1000;
-                int count = 0;
-
-
-                int currentPosition = startingRows[0];
-                int namesColumn = input.dataColumns[2];
-                int quantityColumn = input.dataColumns[3];
-                int sectionColumn = input.typeColumns[0];
-                int groupColumn = input.typeColumns[0] + 1;
-                int categoryColumn = input.typeColumns[0] + 2;
-                int subCategoryColumn = input.typeColumns[0] + 3;
-                string section = input.fullRange.Cells[startingRows[1], input.typeColumns[1]].Value2;
-                string group = input.fullRange.Cells[startingRows[1] + 1, input.typeColumns[1] + 2].Value2;
-                string category = input.fullRange.Cells[startingRows[1] + 2, input.typeColumns[1] + 4].Value2;
-                string subCategory = input.fullRange.Cells[startingRows[1] + 3, input.typeColumns[1] + 6].Value2;
-
-
-                // Iteration through cells.
-                while (nullCount < 10 && workerThreadEnabled)
-                {
-                    if (input.fullRange.Cells[currentPosition, namesColumn] == null || input.fullRange.Cells[currentPosition, namesColumn].Value2 == null)
-                    {
-                        if (!dataCopied)
-                        {
-                            //Type copying
-                            namesQ.Enqueue(new NamesBlock(startY, newSheetPositionY - 1, section, group, category, subCategory));
-
-                            dataCopied = true;
-                        }
-
-                        int type = input.findUsedColumn(currentPosition, 1);
-                        if (type == sectionColumn)
-                        {
-                            section = (input.fullRange.Cells[currentPosition, sectionColumn + 8]).Value2;
-                        }
-                        else if (type == groupColumn)
-                        {
-                            group = (input.fullRange.Cells[currentPosition, groupColumn + 9]).Value2;
-                        }
-                        else if (type == categoryColumn)
-                        {
-                            category = (input.fullRange.Cells[currentPosition, categoryColumn + 10]).Value2;
-                        }
-                        else if (type == subCategoryColumn)
-                        {
-                            subCategory = (input.fullRange.Cells[currentPosition, subCategoryColumn + 11]).Value2;
-                        }
-                        nullCount++;
-                    }
-                    else
-                    {
-                        if (dataCopied) startY = newSheetPositionY;
-                        dataCopied = false;
-                        nullCount = 0;
-
-                        //Code copying.
-                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX] = (input.fullRange.Cells[currentPosition, input.dataColumns[0]]).Value2;
-
-                        //Name copying.
-                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 1] = (input.fullRange.Cells[currentPosition, namesColumn]).Value2;
-
-                        //Quantity copying.
-                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 2] = (input.fullRange.Cells[currentPosition, quantityColumn]).Value2.ToString();
-
-                        //Total copying.
-                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 3] = (input.fullRange.Cells[currentPosition, quantityColumn + 2]).Value2.ToString();
-
-                        //Type copying
-                        //newSheet.Cells[newSheetPositionY, newSheetPositionX + 3] = section;
-                        //newSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = group;
-                        //newSheet.Cells[newSheetPositionY, newSheetPositionX + 5] = category;
-                        //newSheet.Cells[newSheetPositionY, newSheetPositionX + 6] = subCategory;
-
-                        newSheetPositionY++;
-                    }
-                    currentPosition++;
-                    count++;
-
-                    //Test case
-                    if (state == State.Testing)
-                    {
-                        backgroundWorker2.ReportProgress(100 * newSheetPositionY / maxRows);
-                        if (newSheetPositionY >= 1000
-                        && nullCount > 0)
-                        {
-                            workerThreadEnabled = false;
-                        }
-                    }
-
-                    else if (count > 100)
-                    {
-                        backgroundWorker2.ReportProgress(100 * currentPosition / maxRows);
-                        count = 0;
-                    }
-                }
-            }
-
-            //Error handling
-            catch (Exception ex)
-            {
-                String errorMessage;
-                errorMessage = "Error: ";
-                errorMessage = String.Concat(errorMessage, ex.Message);
-                errorMessage = String.Concat(errorMessage, "\n Full String: ");
-                errorMessage = String.Concat(errorMessage, ex.ToString());
-                MessageBox.Show(errorMessage, "Error");
-            }
-        }
-
         /// <summary>
         /// Transfers a specified column on the Excel file into a new one, skipping null cells and filtering unwanted items.
         /// </summary>
@@ -571,13 +286,13 @@ namespace MF_XLS_Parser
         {
             try
             {
+                //Conditional variables or counters.
                 int nullCount = 0;
                 int maxRows = input.fullRange.Rows.Count;
-                if (state == State.Testing) maxRows = 1000;
                 int count = 0;
                 Dictionary<string, DataBlock> contents = new Dictionary<string, DataBlock>();
 
-
+                //Input file traversing variables.
                 int currentPosition = startingRows[0];
                 int namesColumn = input.dataColumns[2];
                 int quantityColumn = input.dataColumns[3];
@@ -590,14 +305,12 @@ namespace MF_XLS_Parser
                 string category = input.fullRange.Cells[startingRows[1] + 2, input.typeColumns[1] + 4].Value2;
                 string subCategory = input.fullRange.Cells[startingRows[1] + 3, input.typeColumns[1] + 6].Value2;
 
-
                 // Iteration through cells.
-                while (nullCount < 10)
+                while (nullCount < 10 && workerThreadEnabled)
                 {
                     if (input.fullRange.Cells[currentPosition, namesColumn] == null || input.fullRange.Cells[currentPosition, namesColumn].Value2 == null)
                     {
-
-
+                        //Stores new category string found in the null name cell.
                         int type = input.findUsedColumn(currentPosition, 1);
                         if (type == sectionColumn)
                         {
@@ -646,38 +359,11 @@ namespace MF_XLS_Parser
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 3] = total.ToString();
 
                                 //Save in DataBlock
-
                                 contents.Add(name, new DataBlock(name, code, quantity, total, newSheetPositionY));
 
                                 //Unit Price copying.
-
-                                /////////////////////////////////////////
-                                //char unit = findUnitValue(name);
-                                //switch (unit)
-                                //{
-                                //    case 'u':
-
-                                //        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "UNIDAD";
-                                //        break;
-
-                                //    case 'k':
-                                //        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "KG";
-                                //        break;
-                                //    case 'l':
-                                //        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "L";
-                                //        break;
-                                //    case 'n':
-                                //        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = "n";
-                                //        (output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] as Excel.Range).Interior.Color = Color.Orange;
-                                //        break;
-                                //    default:
-                                //        (output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] as Excel.Range).Interior.Color = Color.Red;
-                                //        break;
-                                //}
-
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = getUnitaryPrice(name.ToUpper(), quantity, total);
 
-                                /////////////////////////////////////////
                                 //Type copying.
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 5] = section;
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 6] = group;
@@ -716,23 +402,15 @@ namespace MF_XLS_Parser
                     currentPosition++;
                     count++;
 
-                    //Test case
-                    if (state == State.Testing)
-                    {
-                        backgroundWorker2.ReportProgress(100 * newSheetPositionY / maxRows);
-                        if (newSheetPositionY >= 1000
-                        && nullCount > 0)
-                        {
-                            workerThreadEnabled = false;
-                        }
-                    }
-
-                    else if (count > 100)
+                    //Used to report progress.
+                    if (count > 100)
                     {
                         backgroundWorker2.ReportProgress(100 * currentPosition / maxRows);
                         count = 0;
                     }
                 }
+
+                //Removes found names to report missing values.
                 foreach (string name in contents.Keys)
                 {
                     if (NamesList.Contains(name))
@@ -754,151 +432,9 @@ namespace MF_XLS_Parser
             }
         }
 
-        private char findUnitValue(string name)
-        {
-            name.ToUpper();
-            int specialCase = -1;
-
-            //Pre-tokenizing searches
-            if (name.Contains("KILO"))
-            {
-                return 'k';
-            }
-            else if (name.Contains("PAQ") || name.Contains("PACK"))
-            {
-
-                if (name.Contains("UNIDADES"))
-                {
-                    specialCase = 1; // "UNIDADES" case
-                }
-                else if (name.Contains("UNIDAD"))
-                {
-                    specialCase = 3; // "UNIDAD" case
-                }
-                else
-                {
-
-                }
-            }
-
-            //String tokenizing
-            double value;
-            string[] words = name.Split(new char[] { ' ', '.', 'X', ',' });
-            foreach (string word in words)
-            {
-                if (word.Contains("KG"))
-                {
-                    //Get value
-                    if (word.Equals("KG"))
-                    {
-                        return 'k';
-                    }
-                    else
-                    {
-
-                        string temp = word.Replace("KG", "");
-                        if (Double.TryParse(temp, out value)) return 'k';
-
-                    }
-                }
-
-                else if (specialCase == 1 && Double.TryParse(word, out value))
-                {
-                    return 'p';
-                }
-
-                else if (word.Contains("UND"))
-                {
-                    //Get rid of UND to get amount.
-                    string temp = word.Replace("UND", "");
-                    if (Double.TryParse(temp, out value)) return 'u';
-                }
-
-                else if (word.Contains("GR"))
-                {
-                    string temp = word.Replace("GR", "");
-                    if (Double.TryParse(temp, out value))
-                    {
-                        return 'k';
-                    }
-                }
-
-                else if (word.Contains("UNIDAD"))
-                {
-                    if (word.Equals("UNIDAD"))
-                    {
-                        return 'u';
-                    }
-                    else
-                    {
-                        string temp = word.Replace("UNIDAD", "");
-                        if (Double.TryParse(temp, out value)) return 'u';
-                    }
-                }
-
-                else if (word.Contains("UN"))
-                {
-                    string temp = word.Replace("UN", "");
-                    if (Double.TryParse(temp, out value))
-                    {
-                        return 'u';
-                    }
-                }
-
-                else if (word.Contains("ML"))
-                {
-                    string temp = word.Replace("ML", "");
-                    if (Double.TryParse(temp, out value))
-                    {
-                        return 'l';
-                    }
-                }
-
-                else if (word.Contains("CC"))
-                {
-                    string temp = word.Replace("CC", "");
-                    if (Double.TryParse(temp, out value))
-                    {
-                        return 'l';
-                    }
-                }
-
-                else if (word.Contains("L"))
-                {
-                    //Get value
-                    if (word.Equals("L"))
-                    {
-                        return 'l';
-                    }
-                    else
-                    {
-
-                        string temp = word.Replace("L", "");
-                        if (Double.TryParse(temp, out value)) return 'l';
-
-                    }
-                }
-
-                else if (word.Contains("K"))
-                {
-                    //Get value
-                    if (word.Equals("K"))
-                    {
-                        return 'l';
-                    }
-                    else
-                    {
-
-                        string temp = word.Replace("L", "");
-                        if (Double.TryParse(temp, out value)) return 'l';
-
-                    }
-                }
-
-            }   //end foreach loop
-            return 'n';
-        }
-
+        ///////////////////////////////////////////////
+        ///Background worker functions.
+        ///////////////////////////////////////////////
 
         /// <summary>
         /// Background worker 1 work method.
@@ -920,17 +456,8 @@ namespace MF_XLS_Parser
         /// <param name="e"></param>
         private void BackgroundWorker2_DoWork(object sender, DoWorkEventArgs e)
         {
-            //In case the normal search button is pressed.
-            timer.Start();
-            if (state == State.FullProcessing || state == State.Testing)
-            {
-                int newSheetPositionX = 1;
-                int newSheetPositionY = 3;
-                startFullTransfer(newSheetPositionX, newSheetPositionY);
-            }
-
             //In case the filter search button is pressed.
-            else if (state == State.FilterProcessing)
+            if (state == State.FilterProcessing)
             {
                 //Initial data setup.
                 int newSheetPositionX = 1;
@@ -940,38 +467,6 @@ namespace MF_XLS_Parser
                 startFiltering(newSheetPositionX, newSheetPositionY);
             }
             workerThreadEnabled = false;
-        }
-
-        /// <summary>
-        /// Background worker 3 work method.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void BackgroundWorker3_DoWork(object sender, DoWorkEventArgs e)
-        {
-            NamesBlock names;
-
-            try
-            {
-                while (workerThreadEnabled || namesQ.Count > 0)
-                {
-                    if (namesQ.TryDequeue(out names))
-                    {
-                        startNamesCopy(names);
-                    }
-                }
-            }
-
-            //Error handling
-            catch (Exception ex)
-            {
-                String errorMessage;
-                errorMessage = "Error: ";
-                errorMessage = String.Concat(errorMessage, ex.Message);
-                errorMessage = String.Concat(errorMessage, "\n Full String: ");
-                errorMessage = String.Concat(errorMessage, ex.ToString());
-                MessageBox.Show(errorMessage, "Error");
-            }
         }
 
         /// <summary>
@@ -995,26 +490,24 @@ namespace MF_XLS_Parser
             {
                 IsFileLoaded = true;
                 AppLoadingImage.Visible = false;
-                StartButton.Enabled = true;
-                TestButton.Enabled = true;
                 RowConfirmButton.Enabled = true;
                 FilterStartButton.Enabled = true;
                 OpenFileButton.Enabled = true;
-                TestButton.Enabled = true;
                 state = State.Idle;
             }
 
             else
             {
                 activeThreads--;
+
+                //If no more threads are running.
                 if (activeThreads < 1)
                 {
-                    StartButton.Enabled = true;
-                    FilterStartButton.Enabled = true;
-                    TestButton.Enabled = true;
+                    WorkerThreadEnabled = false;
                     LoadingImage.Visible = false;
                     input.dataColumnsReady = false;
                     input.typeColumnsReady = false;
+
                     //Displays the total time it took to carry out the processing.
                     if (timer.IsRunning)
                     {
@@ -1026,11 +519,13 @@ namespace MF_XLS_Parser
                     RowBox1.BackColor = Color.White;
                     RowBox2.BackColor = Color.White;
                     output.excelApp.Visible = true;
+
+                    //Reset counters.
                     timer.Reset();
                     duplicatesProcessed = 0;
                     inputDuplicates = 0;
 
-                    // debug
+                    //Copy missing names to text box.
                     StringBuilder sb = new StringBuilder();
                     int count = 1;
                     foreach (string missingCode in NamesList)
@@ -1041,15 +536,160 @@ namespace MF_XLS_Parser
                         sb.Append("\r\n");
                     }
                     ListBox.Text = sb.ToString();
-                    //
-
                     state = State.Idle;
                 }
             }
         }
 
+        ///////////////////////////////////////////////
+        ///Button event handlers.
+        ///////////////////////////////////////////////
+
         /// <summary>
-        /// Confirms the row in order to start the processing.
+        /// "Open File" button event handler.
+        /// </summary>
+        /// <param name="sender">The button.</param>
+        /// <param name="e">Event.</param>
+        private void OpenFileButton_Click(object sender, EventArgs e)
+        {
+            //File input.
+            try
+            {
+                OpenFileDialog openDialog = new OpenFileDialog();
+                if (openDialog.ShowDialog() == DialogResult.OK)
+                {
+                    if (IsFileLoaded) Cleanup();
+                    state = State.LoadingFile;
+                    fileName = openDialog.FileName;
+                    OpenFileButton.Enabled = false;
+                    DataTextBox.Text = "Archivo cargado: \n\n" + openDialog.FileName;
+                    AppLoadingImage.Visible = true;
+                    backgroundWorker1.RunWorkerAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error cargando el archivo, verifique el formato.");
+            }
+        }
+
+        /// <summary>
+        /// Starts filtering of the input Excel file.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void FilterStartButton_Click(object sender, EventArgs e)
+        {
+            //If rows have been confirmed.
+            if (input.dataColumnsReady
+                && input.typeColumnsReady)
+            {
+                state = State.FilterProcessing;
+                LoadingImage.Visible = true;
+
+                //Workbook
+                output = new ExcelData(null);
+
+                try
+                {
+                    //Read file from dialog.
+                    NamesList = new HashSet<string>();
+                    FormulaStrings = new Dictionary<string, string>();
+                    OpenFileDialog namesDialog = new OpenFileDialog();
+                    OpenFileDialog formulaDialog = new OpenFileDialog();
+                    if (namesDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        if (formulaDialog.ShowDialog() == DialogResult.OK)
+                        {
+                            StreamReader sr1 = new StreamReader(namesDialog.FileName);
+
+                            StreamReader sr2 = new StreamReader(formulaDialog.FileName);
+                            string lineA;
+                            string lineB;
+                            int count = 1;
+                            while ((lineA = sr1.ReadLine()) != null)
+                            {
+                                lineA = lineA.ToUpper();
+                                lineB = sr2.ReadLine();
+                                if (NamesList.Contains(lineA))
+                                {
+                                    //do nothing
+                                    inputDuplicates++;
+                                }
+                                else
+                                {
+                                    NamesList.Add(lineA);
+                                    FormulaStrings.Add(lineA, lineB);
+
+                                }
+                                count++;
+                            }
+                            sr1.Close();
+                            sr2.Close();
+
+                            //Launch worker threads.
+                            activeThreads = 1;
+                            WorkerThreadEnabled = true;
+                            backgroundWorker2.RunWorkerAsync();
+                        }
+                        else throw new Exception("Error loading file.");
+                    }
+                    else throw new Exception("Error loading file.");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error cargando el archivo, verifique el formato.");
+                }
+            }
+            else MessageBox.Show("Por favor confimar fila y filtro");
+        }
+
+        /// <summary>
+        /// Cleanup button event handler.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void CleanupButton_Click(object sender, EventArgs e)
+        {
+            Cleanup();
+        }
+
+        /// <summary>
+        /// "Show Cell Contents" button event handler.
+        /// </summary>
+        /// <param name="sender">The button.</param>
+        /// <param name="e">Event.</param>
+        private void ShowCellButton_Click(object sender, EventArgs e)
+        {
+            int i = Int32.Parse(cellBox1.Text);
+            int j = Int32.Parse(cellBox2.Text);
+            try
+            {
+                if (input.fullRange.Cells[i, j] != null && input.fullRange.Cells[i, j].Value2 != null)
+                {
+                    DataTextBox.Text = (string)(input.fullRange.Cells[i, j] as Excel.Range).Value2;
+                }
+                else DataTextBox.Text = "Celda Vacia";
+            }
+
+            catch (RuntimeBinderException ex)
+            {
+                DataTextBox.Text = ((double)(input.fullRange.Cells[i, j] as Excel.Range).Value2).ToString();
+            }
+
+            catch (Exception ex)
+            {
+                String errorMessage;
+                errorMessage = "Error: ";
+                errorMessage = String.Concat(errorMessage, ex.Message);
+                errorMessage = String.Concat(errorMessage, "\n Full String: ");
+                errorMessage = String.Concat(errorMessage, ex.ToString());
+                MessageBox.Show(errorMessage, "Error");
+            }
+        }
+
+        /// <summary>
+        /// Confirms rows required to obtain data types and data values.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -1080,13 +720,13 @@ namespace MF_XLS_Parser
         }
 
         /// <summary>
-        /// Actions to be carried out when the program is closing.
+        /// Cancels active threads.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void CancelButton_Click(object sender, EventArgs e)
         {
-            if (IsFileLoaded) Cleanup();
+            WorkerThreadEnabled = false;
         }
     }
 }
