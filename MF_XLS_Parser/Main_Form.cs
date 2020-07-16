@@ -118,6 +118,11 @@ namespace MF_XLS_Parser
         public Dictionary<string, string> FormulaStrings;
 
         /// <summary>
+        /// Stores types for each name in the list.
+        /// </summary>
+        public Dictionary<string, TypeBlock> TypeStorage = new Dictionary<string, TypeBlock>();
+
+        /// <summary>
         /// Keeps track of the elapsed time.
         /// </summary>
         private Stopwatch timer = new Stopwatch();
@@ -291,6 +296,7 @@ namespace MF_XLS_Parser
                 int maxRows = input.fullRange.Rows.Count;
                 int count = 0;
                 Dictionary<string, DataBlock> contents = new Dictionary<string, DataBlock>();
+                bool hasNullType = false;
 
                 //Input file traversing variables.
                 int currentPosition = startingRows[0];
@@ -304,6 +310,11 @@ namespace MF_XLS_Parser
                 string group = input.fullRange.Cells[startingRows[1] + 1, input.typeColumns[1] + 2].Value2;
                 string category = input.fullRange.Cells[startingRows[1] + 2, input.typeColumns[1] + 4].Value2;
                 string subCategory = input.fullRange.Cells[startingRows[1] + 3, input.typeColumns[1] + 6].Value2;
+
+                if(section is null || group is null || category is null || subCategory is null)
+                {
+                    hasNullType = true;
+                }
 
                 // Iteration through cells.
                 while (nullCount < 10 && workerThreadEnabled)
@@ -328,6 +339,12 @@ namespace MF_XLS_Parser
                         {
                             subCategory = (input.fullRange.Cells[currentPosition, subCategoryColumn + 11]).Value2;
                         }
+
+                        if (section is null || group is null || category is null || subCategory is null)
+                        {
+                            hasNullType = true;
+                        }
+
                         nullCount++;
                     }
                     else
@@ -347,7 +364,6 @@ namespace MF_XLS_Parser
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX] = code.ToString();
 
                                 //Name copying.
-
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 1] = name;
 
                                 //Quantity copying.
@@ -365,15 +381,45 @@ namespace MF_XLS_Parser
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 4] = getUnitaryPrice(name.ToUpper(), quantity, total);
 
                                 //Type copying.
-                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 5] = section;
-                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 6] = group;
-                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 7] = category;
-                                output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 8] = subCategory;
+                                if (hasNullType)
+                                {
+                                    TypeBlock types;
+                                    //If a type backup type block is found.
+                                    if (TypeStorage.TryGetValue(name, out types))
+                                    {
+
+                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 5] = types.section;
+                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 6] = types.group;
+                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 7] = types.category;
+                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 8] = types.subCategory;
+                                    }
+                                    //If no type block is found.
+                                    else
+                                    {
+                                        (output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 5] as Excel.Range).Interior.Color = Color.Red;
+                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 6].Interior.Color = Color.Red;
+                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 7].Interior.Color = Color.Red;
+                                        output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 8].Interior.Color = Color.Red;
+                                    }
+                                }
+                                //If there is no null type string just copy it.
+                                else
+                                {
+                                    output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 5] = section;
+                                    output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 6] = group;
+                                    output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 7] = category;
+                                    output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 8] = subCategory;
+                                }
 
                                 //Date copying
 
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 10] = input.Month;
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 11] = input.Year;
+
+                                if (!TypeStorage.ContainsKey(name))
+                                {
+                                    TypeStorage.Add(name,new TypeBlock(section,group,category,subCategory));
+                                }
 
                                 newSheetPositionY++;
                             }
