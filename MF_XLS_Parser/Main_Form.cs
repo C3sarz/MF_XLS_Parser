@@ -409,17 +409,16 @@ namespace MF_XLS_Parser
                                     output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 6] = group;
                                     output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 7] = category;
                                     output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 8] = subCategory;
+                                    if (!TypeStorage.ContainsKey(name))
+                                    {
+                                        TypeStorage.Add(name, new TypeBlock(section, group, category, subCategory));
+                                    }
                                 }
 
                                 //Date copying
 
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 10] = input.Month;
                                 output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 11] = input.Year;
-
-                                if (!TypeStorage.ContainsKey(name))
-                                {
-                                    TypeStorage.Add(name,new TypeBlock(section,group,category,subCategory));
-                                }
 
                                 newSheetPositionY++;
                             }
