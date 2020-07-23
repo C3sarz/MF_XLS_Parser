@@ -629,9 +629,6 @@ namespace MF_XLS_Parser
             if (input.dataColumnsReady
                 && input.typeColumnsReady)
             {
-                state = State.FilterProcessing;
-                LoadingImage.Visible = true;
-
                 //Workbook
                 output = new ExcelData(null);
 
@@ -673,6 +670,8 @@ namespace MF_XLS_Parser
                             sr2.Close();
 
                             //Launch worker threads.
+                            state = State.FilterProcessing;
+                            LoadingImage.Visible = true;
                             activeThreads = 1;
                             WorkerThreadEnabled = true;
                             backgroundWorker2.RunWorkerAsync();
