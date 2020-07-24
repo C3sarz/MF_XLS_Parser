@@ -138,6 +138,11 @@ namespace MF_XLS_Parser
         int inputDuplicates = 0;
 
         /// <summary>
+        /// Missing string type
+        /// </summary>
+        int missingTypes = 0;
+
+        /// <summary>
         /// States of the program.
         /// </summary>
         public enum State
@@ -298,19 +303,35 @@ namespace MF_XLS_Parser
                 Dictionary<string, DataBlock> contents = new Dictionary<string, DataBlock>();
                 bool hasNullType = false;
 
-                //Input file traversing variables.
+                //Traversal constant setup..
                 int currentPosition = startingRows[0];
                 int namesColumn = input.dataColumns[2];
                 int quantityColumn = input.dataColumns[3];
-                int sectionColumn = input.typeColumns[0];
-                int groupColumn = input.typeColumns[0] + 1;
-                int categoryColumn = input.typeColumns[0] + 2;
-                int subCategoryColumn = input.typeColumns[0] + 3;
-                string section = input.fullRange.Cells[startingRows[1], input.typeColumns[1]].Value2;
-                string group = input.fullRange.Cells[startingRows[1] + 1, input.typeColumns[1] + 2].Value2;
-                string category = input.fullRange.Cells[startingRows[1] + 2, input.typeColumns[1] + 4].Value2;
-                string subCategory = input.fullRange.Cells[startingRows[1] + 3, input.typeColumns[1] + 6].Value2;
 
+                //No type in file case.
+                int sectionColumn = 0;
+                int groupColumn = 0;
+                int categoryColumn = 0;
+                int subCategoryColumn = 0;
+                string section = null;
+                string group = null;
+                string category = null;
+                string subCategory = null;
+
+                //If type is found set the values.
+                if (startingRows[1] != 0)
+                {
+                    sectionColumn = input.typeColumns[0];
+                    groupColumn = input.typeColumns[0] + 1;
+                    categoryColumn = input.typeColumns[0] + 2;
+                    subCategoryColumn = input.typeColumns[0] + 3;
+                    section = input.fullRange.Cells[startingRows[1], input.typeColumns[1]].Value2;
+                    group = input.fullRange.Cells[startingRows[1] + 1, input.typeColumns[1] + 2].Value2;
+                    category = input.fullRange.Cells[startingRows[1] + 2, input.typeColumns[1] + 4].Value2;
+                    subCategory = input.fullRange.Cells[startingRows[1] + 3, input.typeColumns[1] + 6].Value2;
+                }
+
+                //Safeguard
                 if(section is null || group is null || category is null || subCategory is null)
                 {
                     hasNullType = true;
@@ -400,6 +421,7 @@ namespace MF_XLS_Parser
                                         output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 6].Interior.Color = Color.Red;
                                         output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 7].Interior.Color = Color.Red;
                                         output.currentSheet.Cells[newSheetPositionY, newSheetPositionX + 8].Interior.Color = Color.Red;
+                                        missingTypes++;
                                     }
                                 }
                                 //If there is no null type string just copy it.
@@ -509,6 +531,7 @@ namespace MF_XLS_Parser
                 int newSheetPositionY = 3;
 
                 //Start data filtering.
+                timer.Start();
                 startFiltering(newSheetPositionX, newSheetPositionY);
             }
             workerThreadEnabled = false;
@@ -559,16 +582,17 @@ namespace MF_XLS_Parser
                         timer.Stop();
                         TimeSpan ts = timer.Elapsed;
                         string totalTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
-                        MainTextBox.Text = "Tiempo total: " + totalTime + "\r\nDuplicados en archivo: " + duplicatesProcessed + "\r\nDuplicados en base: " + inputDuplicates;
+                        MainTextBox.Text = "Tiempo total: " + totalTime + "\r\nDuplicados en archivo: " + duplicatesProcessed + "\r\nDuplicados en base: " + inputDuplicates + "\r\nCeldas sin categoria: " + missingTypes;
                     }
-                    RowBox1.BackColor = Color.White;
-                    RowBox2.BackColor = Color.White;
+                    DataRowBox.BackColor = Color.White;
+                    TypeRowBox.BackColor = Color.White;
                     output.excelApp.Visible = true;
 
                     //Reset counters.
                     timer.Reset();
                     duplicatesProcessed = 0;
                     inputDuplicates = 0;
+                    missingTypes = 0;
 
                     //Copy missing names to text box.
                     StringBuilder sb = new StringBuilder();
@@ -741,14 +765,28 @@ namespace MF_XLS_Parser
         {
             try
             {
-                input.getColumns(Int32.Parse(RowBox1.Text), Int32.Parse(RowBox2.Text));
-                startingRows = new int[2];
-                startingRows[0] = Int32.Parse(RowBox1.Text);
-                startingRows[1] = Int32.Parse(RowBox2.Text);
-                input.dataColumnsReady = true;
-                RowBox1.BackColor = Color.LightGreen;
-                input.typeColumnsReady = true;
-                RowBox2.BackColor = Color.LightGreen;
+                if(DataRowBox.Text != "" && TypeRowBox.Text == "")
+                {
+                    input.getColumns(Int32.Parse(DataRowBox.Text), 0);
+                    startingRows = new int[2];
+                    startingRows[0] = Int32.Parse(DataRowBox.Text);
+                    startingRows[1] = 0;
+                    input.dataColumnsReady = true;
+                    DataRowBox.BackColor = Color.LightGreen;
+                    input.typeColumnsReady = true;
+                    TypeRowBox.BackColor = Color.Yellow;
+                }
+                else
+                {
+                    input.getColumns(Int32.Parse(DataRowBox.Text), Int32.Parse(TypeRowBox.Text));
+                    startingRows = new int[2];
+                    startingRows[0] = Int32.Parse(DataRowBox.Text);
+                    startingRows[1] = Int32.Parse(TypeRowBox.Text);
+                    input.dataColumnsReady = true;
+                    DataRowBox.BackColor = Color.LightGreen;
+                    input.typeColumnsReady = true;
+                    TypeRowBox.BackColor = Color.LightGreen;
+                }
                 MainTextBox.Text = input.fullRange.Rows.Count.ToString();
                 input.Month = MonthTextBox.Text;
                 input.Year = YearTextBox.Text;
@@ -757,8 +795,8 @@ namespace MF_XLS_Parser
             {
                 input.dataColumnsReady = false;
                 input.typeColumnsReady = false;
-                RowBox1.BackColor = Color.White;
-                RowBox2.BackColor = Color.White;
+                DataRowBox.BackColor = Color.White;
+                TypeRowBox.BackColor = Color.White;
                 MessageBox.Show("Error confirmando filas.");
             }
         }
