@@ -122,16 +122,19 @@ namespace MF_XLS_Parser
 
             processedColumn = 0;
             position = 1;
-            typeColumns = new int[4];
-            while (processedColumn < 4)
+            if (firstTypeRow != 0)
             {
-                if ((fullRange.Cells[firstTypeRow, position]).Value2 != null)
+                typeColumns = new int[4];
+                while (processedColumn < 4)
                 {
-                    typeColumns[processedColumn] = position;
-                    processedColumn++;
+                    if ((fullRange.Cells[firstTypeRow, position]).Value2 != null)
+                    {
+                        typeColumns[processedColumn] = position;
+                        processedColumn++;
+                    }
+                    position++;
+                    if (position >= 100) throw new Exception("No se encontraron columnas de datos.");
                 }
-                position++;
-                if (position >= 100) throw new Exception("No se encontraron columnas de datos.");
             }
         }
 
